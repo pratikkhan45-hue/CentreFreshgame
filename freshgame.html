@@ -1,0 +1,1095 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Center Fresh: Fresh Dash</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <style>
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      padding: 0;
+      overflow: hidden;
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      background: radial-gradient(circle at top, #00c3ff, #004aad 40%, #050816 80%);
+      color: #f5f7ff;
+    }
+
+    #gameContainer {
+      position: relative;
+      width: 100vw;
+      height: 100vh;
+      overflow: hidden;
+    }
+
+    #gameCanvas {
+      position: absolute;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+      display: block;
+    }
+
+    .hud {
+      position: absolute;
+      z-index: 10;
+      display: flex;
+      gap: 10px;
+      padding: 10px 14px;
+      background: rgba(3, 7, 18, 0.6);
+      border-radius: 999px;
+      backdrop-filter: blur(10px);
+      align-items: center;
+      font-size: 14px;
+      line-height: 1.2;
+      white-space: nowrap;
+    }
+
+    #scoreDisplay {
+      top: 10px;
+      left: 10px;
+    }
+
+    #levelDisplay {
+      top: 10px;
+      right: 10px;
+    }
+
+    #livesDisplay {
+      top: 10px;
+      left: 50%;
+      transform: translateX(-50%);
+    }
+
+    #powerupDisplay {
+      bottom: 10px;
+      left: 50%;
+      transform: translateX(-50%);
+      padding-inline: 18px;
+    }
+
+    .badge {
+      padding: 4px 9px;
+      border-radius: 999px;
+      font-size: 11px;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+    }
+
+    .badge-fresh {
+      background: rgba(0, 255, 214, 0.16);
+      border: 1px solid rgba(0, 255, 214, 0.7);
+      color: #a8fff1;
+    }
+
+    .badge-fruit {
+      background: rgba(255, 102, 196, 0.18);
+      border: 1px solid rgba(255, 153, 230, 0.8);
+      color: #ffe7ff;
+    }
+
+    #startOverlay,
+    #gameOverOverlay {
+      position: absolute;
+      inset: 0;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      background: radial-gradient(circle at top, rgba(0, 195, 255, 0.24), rgba(0, 0, 0, 0.9));
+      z-index: 20;
+      text-align: center;
+      padding: 20px;
+    }
+
+    h1 {
+      margin: 0 0 8px;
+      font-size: clamp(26px, 4vw, 34px);
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+    }
+
+    h1 span {
+      display: block;
+      font-size: 0.6em;
+      opacity: 0.8;
+      letter-spacing: 0.15em;
+    }
+
+    p.subtitle {
+      margin: 0 0 18px;
+      font-size: 14px;
+      opacity: 0.9;
+    }
+
+    .brand-line {
+      margin-bottom: 18px;
+      font-size: 13px;
+    }
+
+    .brand-line strong {
+      color: #a8fff1;
+    }
+
+    .btn {
+      border: none;
+      border-radius: 999px;
+      padding: 10px 22px;
+      margin: 6px 0;
+      font-size: 14px;
+      font-weight: 600;
+      cursor: pointer;
+      text-transform: uppercase;
+      letter-spacing: 0.09em;
+      transition: transform 0.12s ease, box-shadow 0.12s ease, background 0.12s ease;
+    }
+
+    .btn-primary {
+      background: linear-gradient(135deg, #00e6c0, #00b4ff);
+      color: #031019;
+      box-shadow: 0 10px 25px rgba(0, 180, 255, 0.4);
+    }
+
+    .btn-primary:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 14px 30px rgba(0, 180, 255, 0.6);
+    }
+
+    .btn-ghost {
+      background: transparent;
+      color: #e2e8ff;
+      border: 1px solid rgba(148, 163, 184, 0.7);
+    }
+
+    .btn-ghost:hover {
+      background: rgba(15, 23, 42, 0.8);
+    }
+
+    .hint {
+      margin-top: 10px;
+      font-size: 11px;
+      opacity: 0.7;
+    }
+
+    #gameOverOverlay h2 {
+      margin-bottom: 6px;
+      font-size: 20px;
+    }
+
+    #finalScore {
+      margin-bottom: 14px;
+      font-size: 14px;
+      opacity: 0.9;
+    }
+
+    #tagline {
+      font-size: 12px;
+      margin-top: 4px;
+      opacity: 0.85;
+    }
+  </style>
+</head>
+<body>
+  <div id="gameContainer">
+    <canvas id="gameCanvas"></canvas>
+
+    <!-- HUD -->
+    <div id="scoreDisplay" class="hud">
+      <span>Freshness Score:&nbsp;<strong id="scoreValue">0</strong></span>
+    </div>
+
+    <div id="levelDisplay" class="hud">
+      <span>Level:&nbsp;<strong id="levelValue">1</strong></span>
+    </div>
+
+    <div id="livesDisplay" class="hud">
+      <span>Lives:&nbsp;<span id="livesValue"></span></span>
+    </div>
+
+    <div id="powerupDisplay" class="hud">
+      <span>Power-ups:&nbsp;</span>
+      <span class="badge badge-fresh" id="freshBoostStatus">Fresh Boost: OFF</span>
+      <span class="badge badge-fruit" id="flavorFrenzyStatus" style="margin-left: 8px;">Flavor Frenzy: OFF</span>
+    </div>
+
+    <!-- Start Screen -->
+    <div id="startOverlay">
+      <h1>
+        CENTER FRESH
+        <span>FRESH DASH</span>
+      </h1>
+      <p class="subtitle">
+        Dash through the city, collect mints & fruit gums, dodge garlic & onions with pungent smell.<br />
+        Stay Fresh. Stay Fun.
+      </p>
+      <p class="brand-line">
+        <strong>Center Fresh – Fresh Boost:</strong> temporary speed & protection.<br />
+        <strong>Center Fruit – Flavor Frenzy:</strong> magnet that pulls collectibles to you.
+      </p>
+      <button class="btn btn-primary" id="startButton">Tap to Play</button>
+      <button class="btn btn-ghost" id="howToButton">How to Play</button>
+      <div class="hint">
+        Controls: ← / → or A / D keys &nbsp;·&nbsp; On touch: tap left/right side of screen
+      </div>
+    </div>
+
+    <!-- Game Over Screen -->
+    <div id="gameOverOverlay" style="display:none;">
+      <h2>Run Over!</h2>
+      <p id="finalScore"></p>
+      <p id="tagline">You dashed with Center Fresh & Center Fruit. Stay Fresh. Stay Fun.</p>
+      <button class="btn btn-primary" id="restartButton">Play Again</button>
+      <button class="btn btn-ghost" id="backToStartButton">Back to Start</button>
+    </div>
+  </div>
+
+  <script>
+    // ========= Canvas Setup =========
+    const canvas = document.getElementById("gameCanvas");
+    const ctx = canvas.getContext("2d");
+
+    function resizeCanvas() {
+      canvas.width = window.innerWidth;
+      canvas.height = window.innerHeight;
+      // Keep player near bottom after resize
+      playerY = canvas.height * 0.75 - playerHeight / 2;
+    }
+
+    // ========= Game State =========
+    let gameRunning = false;
+    let gameOver = false;
+    let globalTime = 0; // seconds, used for animations
+
+    let freshnessScore = 0;
+    let level = 1;
+
+    const maxLives = 3;
+    let lives = maxLives;
+
+    const playerWidth = 80;
+    const playerHeight = 50;
+    let playerX = 0; // set properly in init()
+    let playerY = 0;
+    let playerSpeed = 12;
+    const basePlayerSpeed = 12;
+
+    let gameSpeed = 3; // how fast things fall
+    const baseGameSpeed = 3;
+
+    const collectibles = []; // Center Fresh & Center Fruit
+    const obstacles = [];    // Garlic & Onion
+
+    const objectSize = 44;
+
+    // Power-ups
+    let freshBoostActive = false;
+    let flavorFrenzyActive = false;
+    let freshBoostTimeoutId = null;
+    let flavorFrenzyTimeoutId = null;
+
+    // Stink mode (after garlic/onion hit)
+    let stinkModeActive = false;
+    let stinkModeTimeoutId = null;
+
+    // Timers
+    let collectibleSpawnId = null;
+    let obstacleSpawnId = null;
+    let difficultyIncreaseId = null;
+
+    // HUD elements
+    const scoreValueEl = document.getElementById("scoreValue");
+    const levelValueEl = document.getElementById("levelValue");
+    const freshBoostStatusEl = document.getElementById("freshBoostStatus");
+    const flavorFrenzyStatusEl = document.getElementById("flavorFrenzyStatus");
+    const livesValueEl = document.getElementById("livesValue");
+
+    // Overlays & buttons
+    const startOverlay = document.getElementById("startOverlay");
+    const gameOverOverlay = document.getElementById("gameOverOverlay");
+    const startButton = document.getElementById("startButton");
+    const howToButton = document.getElementById("howToButton");
+    const restartButton = document.getElementById("restartButton");
+    const backToStartButton = document.getElementById("backToStartButton");
+    const finalScoreEl = document.getElementById("finalScore");
+
+    // ========= Optional Assets (Images/Sound) =========
+    const playerImg = new Image();
+    // playerImg.src = "./images/player.png"; // e.g. gum pack or avatar
+
+    const mintImg = new Image();    // Center Fresh
+    // mintImg.src = "./images/mint.png";
+
+    const fruitImg = new Image();   // Center Fruit
+    // fruitImg.src = "./images/fruit.png";
+
+    const soundCollect = new Audio();
+    // soundCollect.src = "./sound/collect.mp3";
+
+    const soundGameOver = new Audio();
+    // soundGameOver.src = "./sound/gameover.mp3";
+
+    const soundFreshBoost = new Audio();
+    // soundFreshBoost.src = "./sound/freshBoost.mp3";
+
+    const soundFlavorFrenzy = new Audio();
+    // soundFlavorFrenzy.src = "./sound/flavorFrenzy.mp3";
+
+    const soundObstacleHit = new Audio();
+    // soundObstacleHit.src = "./sound/obstacleHit.mp3";
+
+    // ========= Utility =========
+    function randBetween(min, max) {
+      return Math.random() * (max - min) + min;
+    }
+
+    function rectsOverlap(a, b) {
+      return (
+        a.x < b.x + b.w &&
+        a.x + a.w > b.x &&
+        a.y < b.y + b.h &&
+        a.y + a.h > b.y
+      );
+    }
+
+    // ========= Game Init & Reset =========
+    function initGameState() {
+      freshnessScore = 0;
+      level = 1;
+      gameSpeed = baseGameSpeed;
+      playerSpeed = basePlayerSpeed;
+      lives = maxLives;
+
+      collectibles.length = 0;
+      obstacles.length = 0;
+
+      playerX = canvas.width / 2 - playerWidth / 2;
+      playerY = canvas.height * 0.75 - playerHeight / 2;
+
+      clearInterval(collectibleSpawnId);
+      clearInterval(obstacleSpawnId);
+      clearInterval(difficultyIncreaseId);
+
+      deactivateFreshBoost();
+      deactivateFlavorFrenzy();
+      deactivateStinkMode();
+
+      updateHUD();
+    }
+
+    function startGame() {
+      gameOver = false;
+      gameRunning = true;
+      startOverlay.style.display = "none";
+      gameOverOverlay.style.display = "none";
+
+      initGameState();
+
+      // Spawn collectibles
+      collectibleSpawnId = setInterval(() => {
+        if (!gameRunning) return;
+        spawnCollectible();
+      }, 650); // every 650ms
+
+      // Spawn obstacles (garlic & onion)
+      obstacleSpawnId = setInterval(() => {
+        if (!gameRunning) return;
+        spawnObstacle();
+      }, 950); // every 950ms
+
+      // Increase difficulty over time
+      difficultyIncreaseId = setInterval(() => {
+        if (!gameRunning) return;
+        gameSpeed += 0.25;
+        if (freshnessScore >= level * 150) {
+          level++;
+        }
+        updateHUD();
+      }, 7000);
+
+      requestAnimationFrame(gameLoop);
+    }
+
+    function endGame() {
+      gameRunning = false;
+      gameOver = true;
+
+      clearInterval(collectibleSpawnId);
+      clearInterval(obstacleSpawnId);
+      clearInterval(difficultyIncreaseId);
+
+      deactivateFreshBoost();
+      deactivateFlavorFrenzy();
+      deactivateStinkMode();
+
+      finalScoreEl.textContent =
+        "Freshness Score: " + freshnessScore + " · Level reached: " + level;
+      gameOverOverlay.style.display = "flex";
+    }
+
+    // ========= Spawning =========
+    function spawnCollectible() {
+      const brand = Math.random() < 0.6 ? "centerFresh" : "centerFruit";
+      const glowing = Math.random() < 0.18; // 18% chance
+      const lanePadding = 24;
+      const x = randBetween(lanePadding, canvas.width - lanePadding - objectSize);
+
+      collectibles.push({
+        x,
+        y: -objectSize,
+        size: objectSize,
+        brand,
+        glowing,
+      });
+    }
+
+    function spawnObstacle() {
+      const kind = Math.random() < 0.5 ? "garlic" : "onion";
+      const lanePadding = 24;
+      const x = randBetween(lanePadding, canvas.width - lanePadding - objectSize);
+
+      obstacles.push({
+        x,
+        y: -objectSize,
+        size: objectSize,
+        kind,
+      });
+    }
+
+    // ========= Power-ups =========
+    function activateFreshBoost() {
+      if (freshBoostActive) return;
+      freshBoostActive = true;
+      playerSpeed += 4;
+      // soundFreshBoost.play().catch(() => {});
+      updateHUD();
+
+      freshBoostTimeoutId = setTimeout(() => {
+        deactivateFreshBoost();
+      }, 7000); // 7 seconds
+    }
+
+    function deactivateFreshBoost() {
+      if (!freshBoostActive) return;
+      freshBoostActive = false;
+      playerSpeed -= 4;
+      if (freshBoostTimeoutId) {
+        clearTimeout(freshBoostTimeoutId);
+        freshBoostTimeoutId = null;
+      }
+      updateHUD();
+    }
+
+    function activateFlavorFrenzy() {
+      if (flavorFrenzyActive) return;
+      flavorFrenzyActive = true;
+      // soundFlavorFrenzy.play().catch(() => {});
+      updateHUD();
+
+      flavorFrenzyTimeoutId = setTimeout(() => {
+        deactivateFlavorFrenzy();
+      }, 8000); // 8 seconds
+    }
+
+    function deactivateFlavorFrenzy() {
+      if (!flavorFrenzyActive) return;
+      flavorFrenzyActive = false;
+      if (flavorFrenzyTimeoutId) {
+        clearTimeout(flavorFrenzyTimeoutId);
+        flavorFrenzyTimeoutId = null;
+      }
+      updateHUD();
+    }
+
+    // ========= Stink Mode (garlic/onion hits) =========
+    function activateStinkMode() {
+      if (!stinkModeActive) {
+        stinkModeActive = true;
+        playerSpeed = 7; // slower movement
+      }
+      if (stinkModeTimeoutId) {
+        clearTimeout(stinkModeTimeoutId);
+      }
+      // stink effect lasts 3 seconds
+      stinkModeTimeoutId = setTimeout(() => {
+        deactivateStinkMode();
+      }, 3000);
+    }
+
+    function deactivateStinkMode() {
+      stinkModeActive = false;
+      if (stinkModeTimeoutId) {
+        clearTimeout(stinkModeTimeoutId);
+        stinkModeTimeoutId = null;
+      }
+      playerSpeed = basePlayerSpeed;
+    }
+
+    // ========= Drawing Helpers =========
+    function drawBackground() {
+      const g = ctx.createLinearGradient(0, 0, 0, canvas.height);
+      g.addColorStop(0, "#020617");
+      g.addColorStop(0.4, "#05192c");
+      g.addColorStop(1, "#020617");
+      ctx.fillStyle = g;
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+      ctx.strokeStyle = "rgba(148,163,184,0.2)";
+      ctx.lineWidth = 1;
+      const laneCount = 4;
+      for (let i = 1; i < laneCount; i++) {
+        const x = (canvas.width / laneCount) * i;
+        ctx.beginPath();
+        ctx.moveTo(x, 0);
+        ctx.lineTo(x, canvas.height);
+        ctx.stroke();
+      }
+
+      for (let i = 0; i < 18; i++) {
+        const r = randBetween(4, 14);
+        const x = randBetween(0, canvas.width);
+        const y = randBetween(0, canvas.height);
+        ctx.fillStyle = "rgba(56,189,248,0.04)";
+        ctx.beginPath();
+        ctx.arc(x, y, r, 0, Math.PI * 2);
+        ctx.fill();
+      }
+
+      // Stink mode overlay
+      if (stinkModeActive) {
+        ctx.fillStyle = "rgba(234, 179, 8, 0.14)"; // soft yellow haze
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+      }
+    }
+
+    function drawFreshBreezeOverlay() {
+      ctx.save();
+      ctx.translate(-canvas.height * 0.2, 0);
+      ctx.rotate(-Math.PI / 8);
+
+      const stripeWidth = 42;
+      const speed = 120; // px/sec
+      const offset = (globalTime * speed) % stripeWidth;
+
+      for (
+        let x = -stripeWidth * 2;
+        x < canvas.width + canvas.height;
+        x += stripeWidth
+      ) {
+        ctx.fillStyle = "rgba(56,189,248,0.10)";
+        ctx.fillRect(
+          x + offset,
+          0,
+          stripeWidth * 0.45,
+          canvas.height * 1.5
+        );
+      }
+
+      ctx.restore();
+    }
+
+    function drawCollectible(c) {
+      const baseSize = c.size;
+      const pulse =
+        c.glowing ? 1 + 0.12 * Math.sin(globalTime * 6 + c.x * 0.1) : 1;
+      const size = baseSize * pulse;
+
+      const cx = c.x + baseSize / 2;
+      const cy = c.y + baseSize / 2;
+      const x = cx - size / 2;
+      const y = cy - size / 2;
+
+      if (c.brand === "centerFresh") {
+        const radius = 10;
+        const gradient = ctx.createLinearGradient(x, y, x + size, y + size);
+        gradient.addColorStop(0, "#0ea5e9");
+        gradient.addColorStop(0.5, "#22c1ff");
+        gradient.addColorStop(1, "#a5f3fc");
+
+        ctx.fillStyle = gradient;
+        ctx.beginPath();
+        ctx.roundRect(x, y, size, size * 0.7, radius);
+        ctx.fill();
+
+        ctx.fillStyle = "rgba(255,255,255,0.7)";
+        ctx.fillRect(x + size * 0.12, y + size * 0.08, size * 0.12, size * 0.55);
+      } else {
+        const radius = size / 2;
+        const grad = ctx.createRadialGradient(
+          cx,
+          cy,
+          radius * 0.1,
+          cx,
+          cy,
+          radius
+        );
+        grad.addColorStop(0, "#f9a8d4");
+        grad.addColorStop(0.4, "#f97316");
+        grad.addColorStop(1, "#be185d");
+
+        ctx.fillStyle = grad;
+        ctx.beginPath();
+        ctx.arc(cx, cy, radius, 0, Math.PI * 2);
+        ctx.fill();
+
+        ctx.strokeStyle = "rgba(255,255,255,0.5)";
+        ctx.lineWidth = 1.2;
+        ctx.beginPath();
+        ctx.moveTo(cx, cy - radius * 0.9);
+        ctx.lineTo(cx, cy + radius * 0.9);
+        ctx.moveTo(cx - radius * 0.7, cy);
+        ctx.lineTo(cx + radius * 0.7, cy);
+        ctx.stroke();
+      }
+
+      if (c.glowing) {
+        const ringRadius = size * 0.6 + 4 * Math.sin(globalTime * 5);
+        ctx.strokeStyle =
+          c.brand === "centerFresh"
+            ? "rgba(125, 249, 255, 0.9)"
+            : "rgba(255, 209, 249, 0.9)";
+        ctx.lineWidth = 2;
+        ctx.beginPath();
+        ctx.arc(cx, cy, ringRadius, 0, Math.PI * 2);
+        ctx.stroke();
+      }
+    }
+
+    function drawObstacle(o) {
+      const baseSize = o.size;
+      const wobbleScale = 1 + 0.15 * Math.sin(globalTime * 5 + o.x * 0.25);
+      const size = baseSize * wobbleScale;
+
+      const cx = o.x + baseSize / 2;
+      const cy = o.y + baseSize / 2;
+      const x = cx - size / 2;
+      const y = cy - size / 2;
+
+      if (o.kind === "garlic") {
+        // Garlic bulb
+        ctx.fillStyle = "#f9fafb";
+        ctx.beginPath();
+        ctx.ellipse(cx, cy + size * 0.1, size * 0.45, size * 0.4, 0, 0, Math.PI * 2);
+        ctx.fill();
+
+        // Garlic cloves lines
+        ctx.strokeStyle = "rgba(148,163,184,0.9)";
+        ctx.lineWidth = 1.3;
+        ctx.beginPath();
+        ctx.moveTo(cx, cy - size * 0.25);
+        ctx.lineTo(cx, cy + size * 0.35);
+        ctx.moveTo(cx - size * 0.18, cy - size * 0.15);
+        ctx.lineTo(cx - size * 0.18, cy + size * 0.3);
+        ctx.moveTo(cx + size * 0.18, cy - size * 0.15);
+        ctx.lineTo(cx + size * 0.18, cy + size * 0.3);
+        ctx.stroke();
+
+        // Garlic stem
+        ctx.strokeStyle = "rgba(34,197,94,0.95)";
+        ctx.lineWidth = 2;
+        ctx.beginPath();
+        ctx.moveTo(cx, cy - size * 0.4);
+        ctx.lineTo(cx, cy - size * 0.6);
+        ctx.stroke();
+      } else {
+        // Onion bulb
+        const radius = size * 0.45;
+        const grad = ctx.createRadialGradient(
+          cx,
+          cy,
+          radius * 0.2,
+          cx,
+          cy,
+          radius
+        );
+        grad.addColorStop(0, "#fee2e2");
+        grad.addColorStop(0.4, "#fb7185");
+        grad.addColorStop(1, "#9f1239");
+
+        ctx.fillStyle = grad;
+        ctx.beginPath();
+        ctx.arc(cx, cy + size * 0.05, radius, 0, Math.PI * 2);
+        ctx.fill();
+
+        // Onion lines
+        ctx.strokeStyle = "rgba(248,250,252,0.75)";
+        ctx.lineWidth = 1.3;
+        ctx.beginPath();
+        ctx.moveTo(cx, cy - radius * 0.8);
+        ctx.lineTo(cx, cy + radius * 0.9);
+        ctx.moveTo(cx - radius * 0.45, cy);
+        ctx.lineTo(cx - radius * 0.1, cy + radius * 0.8);
+        ctx.moveTo(cx + radius * 0.45, cy);
+        ctx.lineTo(cx + radius * 0.1, cy + radius * 0.8);
+        ctx.stroke();
+
+        // Small onion stem
+        ctx.strokeStyle = "rgba(132,204,22,0.95)";
+        ctx.lineWidth = 2;
+        ctx.beginPath();
+        ctx.moveTo(cx, cy - radius * 1.1);
+        ctx.lineTo(cx, cy - radius * 1.4);
+        ctx.stroke();
+      }
+
+      // Pungent smell – yellow wavy lines above
+      ctx.strokeStyle = "rgba(234, 179, 8, 0.8)";
+      ctx.lineWidth = 1.4;
+      for (let i = -1; i <= 1; i++) {
+        const sx = cx + i * (size * 0.25);
+        ctx.beginPath();
+        ctx.moveTo(sx, cy - size * 0.1);
+        ctx.quadraticCurveTo(
+          sx + 5 * Math.sin(globalTime * 2.5 + i),
+          cy - size * 0.4,
+          sx,
+          cy - size * 0.7
+        );
+        ctx.stroke();
+      }
+    }
+
+    function drawPlayer() {
+      const px = playerX;
+      const py = playerY;
+
+      const glowRadius =
+        freshBoostActive || flavorFrenzyActive ? 24 : 0;
+
+      if (glowRadius > 0) {
+        const gradient = ctx.createRadialGradient(
+          px + playerWidth / 2,
+          py + playerHeight / 2,
+          4,
+          px + playerWidth / 2,
+          py + playerHeight / 2,
+          glowRadius
+        );
+        if (freshBoostActive && flavorFrenzyActive) {
+          gradient.addColorStop(0, "rgba(0,255,214,0.9)");
+          gradient.addColorStop(1, "rgba(255,102,196,0.7)");
+        } else if (freshBoostActive) {
+          gradient.addColorStop(0, "rgba(0,255,214,0.8)");
+          gradient.addColorStop(1, "rgba(0,180,255,0.4)");
+        } else if (flavorFrenzyActive) {
+          gradient.addColorStop(0, "rgba(255,153,230,0.8)");
+          gradient.addColorStop(1, "rgba(255,102,196,0.4)");
+        }
+        ctx.fillStyle = gradient;
+        ctx.beginPath();
+        ctx.ellipse(
+          px + playerWidth / 2,
+          py + playerHeight,
+          playerWidth * 0.7,
+          playerHeight * 0.7,
+          0,
+          0,
+          Math.PI * 2
+        );
+        ctx.fill();
+      }
+
+      if (playerImg.src) {
+        ctx.drawImage(playerImg, px, py, playerWidth, playerHeight);
+      } else {
+        const radius = 12;
+        ctx.fillStyle = "#0ea5e9";
+        ctx.beginPath();
+        ctx.moveTo(px + radius, py);
+        ctx.lineTo(px + playerWidth - radius, py);
+        ctx.quadraticCurveTo(
+          px + playerWidth,
+          py,
+          px + playerWidth,
+          py + radius
+        );
+        ctx.lineTo(px + playerWidth, py + playerHeight - radius);
+        ctx.quadraticCurveTo(
+          px + playerWidth,
+          py + playerHeight,
+          px + playerWidth - radius,
+          py + playerHeight
+        );
+        ctx.lineTo(px + radius, py + playerHeight);
+        ctx.quadraticCurveTo(
+          px,
+          py + playerHeight,
+          px,
+          py + playerHeight - radius
+        );
+        ctx.lineTo(px, py + radius);
+        ctx.quadraticCurveTo(px, py, px + radius, py);
+        ctx.fill();
+
+        ctx.fillStyle = "#e0faff";
+        ctx.fillRect(
+          px + 10,
+          py + 10,
+          playerWidth - 20,
+          playerHeight - 20
+        );
+        ctx.fillStyle = "#0f172a";
+        ctx.font = "bold 14px system-ui";
+        ctx.textAlign = "center";
+        ctx.fillText(
+          "CF",
+          px + playerWidth / 2,
+          py + playerHeight / 2 + 4
+        );
+      }
+
+      if (flavorFrenzyActive) {
+        const centerX = px + playerWidth / 2;
+        const centerY = py + playerHeight / 2;
+        const orbitRadius = playerWidth * 0.8;
+        const dotCount = 6;
+
+        for (let i = 0; i < dotCount; i++) {
+          const angle =
+            globalTime * 3 + (i * (Math.PI * 2)) / dotCount;
+          const dx = centerX + orbitRadius * Math.cos(angle);
+          const dy = centerY + orbitRadius * Math.sin(angle);
+
+          ctx.beginPath();
+          ctx.arc(dx, dy, 5, 0, Math.PI * 2);
+          ctx.fillStyle =
+            i % 2 === 0 ? "#f97316" : "#f9a8d4";
+          ctx.fill();
+        }
+      }
+    }
+
+    // ========= HUD =========
+    function updateHUD() {
+      scoreValueEl.textContent = freshnessScore.toString();
+      levelValueEl.textContent = level.toString();
+
+      freshBoostStatusEl.textContent = "Fresh Boost: " + (freshBoostActive ? "ON" : "OFF");
+      flavorFrenzyStatusEl.textContent = "Flavor Frenzy: " + (flavorFrenzyActive ? "ON" : "OFF");
+
+      let roses = "";
+      for (let i = 0; i < lives; i++) {
+        roses += "🌹";
+      }
+      livesValueEl.textContent = roses || "—";
+    }
+
+    // ========= Game Loop =========
+    function gameLoop(timestamp) {
+      if (!gameRunning) return;
+
+      if (!timestamp) timestamp = 0;
+      globalTime = timestamp / 1000;
+
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      drawBackground();
+
+      if (freshBoostActive) {
+        drawFreshBreezeOverlay();
+      }
+
+      // Update collectibles
+      for (let i = collectibles.length - 1; i >= 0; i--) {
+        const c = collectibles[i];
+
+        if (flavorFrenzyActive) {
+          const playerCenterX = playerX + playerWidth / 2;
+          const playerCenterY = playerY + playerHeight / 2;
+          const cCenterX = c.x + c.size / 2;
+          const cCenterY = c.y + c.size / 2;
+
+          const dx = playerCenterX - cCenterX;
+          const dy = playerCenterY - cCenterY;
+          const dist = Math.sqrt(dx * dx + dy * dy);
+          const magnetRadius = 240;
+
+          if (dist < magnetRadius && dist > 1) {
+            const pullStrength = 0.08;
+            c.x += (dx / dist) * (gameSpeed * pullStrength * 16);
+            c.y += (dy / dist) * (gameSpeed * pullStrength * 16);
+          } else {
+            c.y += gameSpeed;
+          }
+        } else {
+          c.y += gameSpeed;
+        }
+
+        drawCollectible(c);
+
+        const playerRect = { x: playerX, y: playerY, w: playerWidth, h: playerHeight };
+        const cRect = { x: c.x, y: c.y, w: c.size, h: c.size };
+
+        if (rectsOverlap(playerRect, cRect)) {
+          const base = 10;
+          const bonus = c.glowing ? (c.brand === "centerFresh" ? 25 : 20) : 0;
+          freshnessScore += base + bonus;
+
+          if (c.brand === "centerFresh" && c.glowing) {
+            activateFreshBoost();
+          } else if (c.brand === "centerFruit" && c.glowing) {
+            activateFlavorFrenzy();
+          }
+
+          collectibles.splice(i, 1);
+          updateHUD();
+          continue;
+        }
+
+        if (c.y > canvas.height + 60) {
+          collectibles.splice(i, 1);
+        }
+      }
+
+      // Update obstacles (garlic & onions)
+      for (let i = obstacles.length - 1; i >= 0; i--) {
+        const o = obstacles[i];
+
+        if (stinkModeActive) {
+          // NEGATIVE magnet: garlic/onion get pulled towards you
+          const playerCenterX = playerX + playerWidth / 2;
+          const playerCenterY = playerY + playerHeight / 2;
+          const oCenterX = o.x + o.size / 2;
+          const oCenterY = o.y + o.size / 2;
+
+          const dx = playerCenterX - oCenterX;
+          const dy = playerCenterY - oCenterY;
+          const dist = Math.sqrt(dx * dx + dy * dy);
+          const magnetRadius = 280;
+
+          if (dist < magnetRadius && dist > 1) {
+            const pullStrength = 0.07;
+            o.x += (dx / dist) * (gameSpeed * pullStrength * 16);
+            o.y += (dy / dist) * (gameSpeed * pullStrength * 16);
+          } else {
+            o.y += gameSpeed + 0.5;
+          }
+        } else {
+          o.y += gameSpeed + 0.5;
+        }
+
+        drawObstacle(o);
+
+        const playerRect = { x: playerX, y: playerY, w: playerWidth, h: playerHeight };
+        const oRect = { x: o.x, y: o.y, w: o.size, h: o.size };
+
+        if (rectsOverlap(playerRect, oRect)) {
+          if (freshBoostActive) {
+            // Protected: destroy garlic/onion
+            obstacles.splice(i, 1);
+          } else {
+            // Garlic/Onion hit
+            lives--;
+            activateStinkMode();
+            obstacles.splice(i, 1);
+            updateHUD();
+
+            if (lives <= 0) {
+              endGame();
+              return;
+            }
+          }
+        } else if (o.y > canvas.height + 60) {
+          obstacles.splice(i, 1);
+        }
+      }
+
+      drawPlayer();
+      requestAnimationFrame(gameLoop);
+    }
+
+    // ========= Controls =========
+    const keys = {
+      left: false,
+      right: false,
+    };
+
+    document.addEventListener("keydown", (e) => {
+      if (e.key === "ArrowLeft" || e.key === "a" || e.key === "A") {
+        keys.left = true;
+      }
+      if (e.key === "ArrowRight" || e.key === "d" || e.key === "D") {
+        keys.right = true;
+      }
+    });
+
+    document.addEventListener("keyup", (e) => {
+      if (e.key === "ArrowLeft" || e.key === "a" || e.key === "A") {
+        keys.left = false;
+      }
+      if (e.key === "ArrowRight" || e.key === "d" || e.key === "D") {
+        keys.right = false;
+      }
+    });
+
+    canvas.addEventListener("touchstart", (e) => {
+      if (!gameRunning && !gameOver) return;
+      const touch = e.touches[0];
+      if (!touch) return;
+      if (touch.clientX < canvas.width / 2) {
+        keys.left = true;
+        keys.right = false;
+      } else {
+        keys.right = true;
+        keys.left = false;
+      }
+    });
+
+    canvas.addEventListener("touchend", () => {
+      keys.left = false;
+      keys.right = false;
+    });
+
+    // Continuous player movement
+    function updatePlayerPosition() {
+      if (keys.left) {
+        playerX -= playerSpeed;
+      }
+      if (keys.right) {
+        playerX += playerSpeed;
+      }
+      if (playerX < 0) playerX = 0;
+      if (playerX + playerWidth > canvas.width) {
+        playerX = canvas.width - playerWidth;
+      }
+      requestAnimationFrame(updatePlayerPosition);
+    }
+
+    // ========= UI Buttons =========
+    startButton.addEventListener("click", () => {
+      startGame();
+    });
+
+    howToButton.addEventListener("click", () => {
+      alert(
+        "How to Play:\n\n" +
+          "• Move left/right using ← → or A / D keys.\n" +
+          "• On mobile, tap left/right side of the screen.\n" +
+          "• Collect Center Fresh mints (blue) and Center Fruit gums (pink/orange) to increase your Freshness Score.\n" +
+          "• Glowing items trigger power-ups:\n" +
+          "   – Fresh Boost: speed + protection from obstacles (with breeze effect)\n" +
+          "   – Flavor Frenzy: magnet that pulls collectibles toward you (with orbiting fruits)\n" +
+          "• Garlic & onion obstacles have pungent smell:\n" +
+          "   – First 2 hits: you slow down and they get attracted towards you.\n" +
+          "   – 3rd hit: you lose your last rose and the run ends.\n"
+      );
+    });
+
+    restartButton.addEventListener("click", () => {
+      startGame();
+    });
+
+    backToStartButton.addEventListener("click", () => {
+      gameOverOverlay.style.display = "none";
+      startOverlay.style.display = "flex";
+    });
+
+    // ========= Init =========
+    window.addEventListener("resize", resizeCanvas);
+    resizeCanvas();
+    initGameState();
+    updatePlayerPosition();
+  </script>
+</body>
+</html>
