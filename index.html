@@ -12,7 +12,7 @@
       padding: 0;
       overflow: hidden;
       font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
-      background: #000;
+      background: #0a0a0a;
       color: #f5f7ff;
     }
 
@@ -150,10 +150,9 @@
     }
 
     #resultImage {
-      max-width: 100%;
-      max-height: 100%;
-      object-fit: cover;
-      flex: 1;
+      width: 100%;
+      height: 100%;
+      object-fit: contain;
     }
 
     #gameOverOverlay {
@@ -236,8 +235,8 @@
 
     const loveBarCanvas = document.getElementById("loveBarCanvas");
     const loveCtx = loveBarCanvas.getContext("2d");
-    const LOVE_BAR_WIDTH = 360;
-    const LOVE_BAR_HEIGHT = 80;
+    const LOVE_BAR_WIDTH = 400;
+    const LOVE_BAR_HEIGHT = 100;
 
     function resizeCanvases() {
       // Simple resize without DPR - much faster!
@@ -389,17 +388,20 @@
       clearInterval(obstacleSpawnId);
 
       if (lvl === 1) {
-        gameSpeed = 3.5;
-        collectibleSpawnId = setInterval(spawnCollectible, 800);
-        obstacleSpawnId = setInterval(spawnObstacle, 1100);
+        // Easy: Slow speed, more time between obstacles
+        gameSpeed = 3;
+        collectibleSpawnId = setInterval(spawnCollectible, 900);
+        obstacleSpawnId = setInterval(spawnObstacle, 1400);
       } else if (lvl === 2) {
+        // Medium: Moderate speed, balanced spawns
         gameSpeed = 4.5;
-        collectibleSpawnId = setInterval(spawnCollectible, 650);
-        obstacleSpawnId = setInterval(spawnObstacle, 900);
+        collectibleSpawnId = setInterval(spawnCollectible, 700);
+        obstacleSpawnId = setInterval(spawnObstacle, 1000);
       } else {
-        gameSpeed = 5.5;
-        collectibleSpawnId = setInterval(spawnCollectible, 520);
-        obstacleSpawnId = setInterval(spawnObstacle, 750);
+        // Hard: Fast speed, frequent obstacles (but still fair)
+        gameSpeed = 6;
+        collectibleSpawnId = setInterval(spawnCollectible, 550);
+        obstacleSpawnId = setInterval(spawnObstacle, 800);
       }
     }
 
@@ -474,7 +476,7 @@
         const dy = (canvas.height - drawH) / 2;
         ctx.drawImage(bgImg, dx, dy, drawW, drawH);
       } else {
-        ctx.fillStyle = "#111";
+        ctx.fillStyle = "#1a1a1a";
         ctx.fillRect(0, 0, canvas.width, canvas.height);
       }
     }
@@ -513,10 +515,10 @@
     function drawLoveBar() {
       loveCtx.clearRect(0, 0, LOVE_BAR_WIDTH, LOVE_BAR_HEIGHT);
 
-      const pad = 10;
-      const iconSize = 52;
+      const pad = 12;
+      const iconSize = 64;
       const barWidth = LOVE_BAR_WIDTH - pad * 2 - iconSize * 2 - 24;
-      const barHeight = 20;
+      const barHeight = 24;
       const barX = pad + iconSize + 12;
       const barY = (LOVE_BAR_HEIGHT - barHeight) / 2;
 
@@ -542,7 +544,7 @@
 
       loveCtx.fillStyle = "#1f2933";
       loveCtx.beginPath();
-      loveCtx.roundRect(barX, barY, barWidth, barHeight, 10);
+      loveCtx.roundRect(barX, barY, barWidth, barHeight, 12);
       loveCtx.fill();
 
       const filledWidth = barWidth * clamp(loveProgress, 0, 1);
@@ -551,13 +553,13 @@
       grad.addColorStop(1, "#22c55e");
       loveCtx.fillStyle = grad;
       loveCtx.beginPath();
-      loveCtx.roundRect(barX, barY, filledWidth, barHeight, 10);
+      loveCtx.roundRect(barX, barY, filledWidth, barHeight, 12);
       loveCtx.fill();
 
       loveCtx.strokeStyle = "#e5e7eb";
-      loveCtx.lineWidth = 1;
+      loveCtx.lineWidth = 2;
       loveCtx.beginPath();
-      loveCtx.roundRect(barX, barY, barWidth, barHeight, 10);
+      loveCtx.roundRect(barX, barY, barWidth, barHeight, 12);
       loveCtx.stroke();
     }
 
@@ -715,14 +717,33 @@
 
     howToButton.addEventListener("click", () => {
       alert(
-        "How to Play:\n\n" +
-        "• You have 60 seconds total.\n" +
-        "• 0–20s: Level 1 (easy), 20–40s: Level 2, 40–60s: Level 3.\n" +
-        "• Move left/right with arrow keys or A/D. On mobile, tap left/right side.\n" +
-        "• Collect Center Fresh & Center Fruit to increase Freshness and move the Love bar towards Sona.\n" +
-        "• Hitting garlic or onions costs one rose and reduces the Love bar.\n" +
-        "• Lose all 3 roses in Level 1 or 2 for different sad endings.\n" +
-        "• Survive all 60 seconds with a full Love bar to unlock the happy ending!"
+        "🎮 HOW TO PLAY:\n\n" +
+        "📖 THE STORY:\n" +
+        "Sonu wants to propose to Sona, but he has bad breath! He has exactly 60 seconds to collect fresh mints and fruits while avoiding stinky garlic and onions. Fill the Love Bar completely and survive to win her heart!\n\n" +
+        "⏱️ 3 LEVELS IN 60 SECONDS:\n" +
+        "• Level 1 (0-20 seconds): EASY - Slow falling items, fewer obstacles\n" +
+        "• Level 2 (20-40 seconds): MEDIUM - Faster items, more obstacles\n" +
+        "• Level 3 (40-60 seconds): HARD - Very fast, many obstacles!\n\n" +
+        "🎯 CONTROLS:\n" +
+        "• Desktop: Use ← → arrow keys OR A/D keys\n" +
+        "• Mobile: Tap left/right side of screen\n\n" +
+        "✨ COLLECT (GOOD):\n" +
+        "• Center Fresh (blue) - Adds freshness points\n" +
+        "• Center Fruit (pink) - Adds more freshness points\n" +
+        "• Both fill the Love Bar and make Sonu happy!\n\n" +
+        "💔 AVOID (BAD):\n" +
+        "• Garlic & Onions - Lose 1 rose (life)\n" +
+        "• Reduces the Love Bar\n" +
+        "• Makes Sonu sad temporarily\n\n" +
+        "🏆 WIN CONDITIONS:\n" +
+        "• Survive all 60 seconds\n" +
+        "• Fill the Love Bar to green (reach the girl's side)\n" +
+        "• Keep at least 1 rose remaining\n" +
+        "= Sona says YES! 💚\n\n" +
+        "💀 LOSE CONDITIONS:\n" +
+        "• Lose all 3 roses = Different sad endings based on which level you reached\n" +
+        "• Time runs out with low Love Bar = Proposal rejected\n\n" +
+        "Good luck, Sonu! 🌹"
       );
     });
 
