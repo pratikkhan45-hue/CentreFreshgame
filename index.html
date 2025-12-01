@@ -14,7 +14,7 @@
       padding: 0;
       overflow: hidden;
       font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
-      background: radial-gradient(circle at top, #00c3ff, #004aad 40%, #050816 80%);
+      background: #020617;
       color: #f5f7ff;
     }
 
@@ -39,7 +39,7 @@
       display: flex;
       gap: 10px;
       padding: 10px 14px;
-      background: rgba(3, 7, 18, 0.6);
+      background: rgba(3, 7, 18, 0.7);
       border-radius: 999px;
       backdrop-filter: blur(10px);
       align-items: center;
@@ -99,7 +99,7 @@
       flex-direction: column;
       align-items: center;
       justify-content: center;
-      background: radial-gradient(circle at top, rgba(0, 195, 255, 0.24), rgba(0, 0, 0, 0.9));
+      background: radial-gradient(circle at top, rgba(0, 195, 255, 0.3), rgba(0, 0, 0, 0.92));
       z-index: 20;
       text-align: center;
       padding: 20px;
@@ -222,7 +222,7 @@
         <span>FRESH DASH</span>
       </h1>
       <p class="subtitle">
-        Dash through the city, collect mints & fruit gums, dodge garlic & onions with pungent smell.<br />
+        Dash through the supermarket aisle, collect Center Fresh & Center Fruit, dodge angry garlics & onions.<br />
         Stay Fresh. Stay Fun.
       </p>
       <p class="brand-line">
@@ -282,7 +282,7 @@
     const collectibles = []; // Center Fresh & Center Fruit
     const obstacles = [];    // Garlic & Onion
 
-    const objectSize = 60;
+    const objectSize = 64;   // size for candies/obstacles
 
     // Power-ups
     let freshBoostActive = false;
@@ -316,9 +316,16 @@
     const finalScoreEl = document.getElementById("finalScore");
 
     // ========= Assets =========
-    const playerImg = new Image();
-    // playerImg.src = "./images/player.png"; // optional
+    const playerImg = new Image(); // optional if you want a custom player sprite
 
+    // Candies
+    const centerFreshImg = new Image();
+    centerFreshImg.src = "./images/centerfresh.png";
+
+    const centerFruitImg = new Image();
+    centerFruitImg.src = "./images/centerfruit.png";
+
+    // Obstacles
     const garlicImages = [];
     const onionImages = [];
 
@@ -328,25 +335,20 @@
       return img;
     }
 
-    // Put your files at ./images/garlic.png, ./images/onion1.png, ./images/onion2.png
     garlicImages.push(loadImage("./images/garlic.png"));
     onionImages.push(loadImage("./images/onion1.png"));
     onionImages.push(loadImage("./images/onion2.png"));
 
+    // Background
+    const supermarketImg = new Image();
+    supermarketImg.src = "./images/supermarket.jpg";
+
     const soundCollect = new Audio();
-    // soundCollect.src = "./sound/collect.mp3";
-
     const soundGameOver = new Audio();
-    // soundGameOver.src = "./sound/gameover.mp3";
-
     const soundFreshBoost = new Audio();
-    // soundFreshBoost.src = "./sound/freshBoost.mp3";
-
     const soundFlavorFrenzy = new Audio();
-    // soundFlavorFrenzy.src = "./sound/flavorFrenzy.mp3";
-
     const soundObstacleHit = new Audio();
-    // soundObstacleHit.src = "./sound/obstacleHit.mp3";
+    // (Hook up sounds if you add files)
 
     // ========= Utility =========
     function randBetween(min, max) {
@@ -441,7 +443,7 @@
     function spawnCollectible() {
       const brand = Math.random() < 0.6 ? "centerFresh" : "centerFruit";
       const glowing = Math.random() < 0.18; // 18% chance
-      const lanePadding = 24;
+      const lanePadding = 40;
       const x = randBetween(lanePadding, canvas.width - lanePadding - objectSize);
 
       collectibles.push({
@@ -455,7 +457,7 @@
 
     function spawnObstacle() {
       const kind = Math.random() < 0.5 ? "garlic" : "onion";
-      const lanePadding = 24;
+      const lanePadding = 40;
       const x = randBetween(lanePadding, canvas.width - lanePadding - objectSize);
 
       const imgIndex =
@@ -477,7 +479,6 @@
       if (freshBoostActive) return;
       freshBoostActive = true;
       playerSpeed += 4;
-      // soundFreshBoost.play().catch(() => {});
       updateHUD();
 
       freshBoostTimeoutId = setTimeout(() => {
@@ -499,7 +500,6 @@
     function activateFlavorFrenzy() {
       if (flavorFrenzyActive) return;
       flavorFrenzyActive = true;
-      // soundFlavorFrenzy.play().catch(() => {});
       updateHUD();
 
       flavorFrenzyTimeoutId = setTimeout(() => {
@@ -543,14 +543,32 @@
 
     // ========= Drawing Helpers =========
     function drawBackground() {
+      // Draw supermarket aisle image as "cover"
+      if (supermarketImg.complete && supermarketImg.naturalWidth > 0) {
+        const iw = supermarketImg.width;
+        const ih = supermarketImg.height;
+        const scale = Math.max(canvas.width / iw, canvas.height / ih);
+        const dw = iw * scale;
+        const dh = ih * scale;
+        const dx = (canvas.width - dw) / 2;
+        const dy = (canvas.height - dh) / 2;
+        ctx.drawImage(supermarketImg, dx, dy, dw, dh);
+      } else {
+        // fallback plain background
+        ctx.fillStyle = "#020617";
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+      }
+
+      // Dark overlay for contrast
       const g = ctx.createLinearGradient(0, 0, 0, canvas.height);
-      g.addColorStop(0, "#020617");
-      g.addColorStop(0.4, "#05192c");
-      g.addColorStop(1, "#020617");
+      g.addColorStop(0, "rgba(15,23,42,0.75)");
+      g.addColorStop(0.4, "rgba(15,23,42,0.35)");
+      g.addColorStop(1, "rgba(15,23,42,0.9)");
       ctx.fillStyle = g;
       ctx.fillRect(0, 0, canvas.width, canvas.height);
 
-      ctx.strokeStyle = "rgba(148,163,184,0.2)";
+      // Lane lines
+      ctx.strokeStyle = "rgba(148,163,184,0.35)";
       ctx.lineWidth = 1;
       const laneCount = 4;
       for (let i = 1; i < laneCount; i++) {
@@ -561,11 +579,12 @@
         ctx.stroke();
       }
 
-      for (let i = 0; i < 18; i++) {
-        const r = randBetween(4, 14);
+      // Subtle floating lights
+      for (let i = 0; i < 16; i++) {
+        const r = randBetween(3, 10);
         const x = randBetween(0, canvas.width);
         const y = randBetween(0, canvas.height);
-        ctx.fillStyle = "rgba(56,189,248,0.04)";
+        ctx.fillStyle = "rgba(56,189,248,0.05)";
         ctx.beginPath();
         ctx.arc(x, y, r, 0, Math.PI * 2);
         ctx.fill();
@@ -573,7 +592,7 @@
 
       // Stink mode overlay
       if (stinkModeActive) {
-        ctx.fillStyle = "rgba(234, 179, 8, 0.14)"; // soft yellow haze
+        ctx.fillStyle = "rgba(234, 179, 8, 0.14)";
         ctx.fillRect(0, 0, canvas.width, canvas.height);
       }
     }
@@ -613,49 +632,21 @@
       const cx = c.x + baseSize / 2;
       const cy = c.y + baseSize / 2;
       const x = cx - size / 2;
-      const y = cy - size / 2;
+      const y = cy - (size * 0.6) / 2; // candies are more rectangular
 
-      if (c.brand === "centerFresh") {
-        const radius = 10;
-        const gradient = ctx.createLinearGradient(x, y, x + size, y + size);
-        gradient.addColorStop(0, "#0ea5e9");
-        gradient.addColorStop(0.5, "#22c1ff");
-        gradient.addColorStop(1, "#a5f3fc");
+      let img = c.brand === "centerFresh" ? centerFreshImg : centerFruitImg;
 
-        ctx.fillStyle = gradient;
-        ctx.beginPath();
-        ctx.roundRect(x, y, size, size * 0.7, radius);
-        ctx.fill();
-
-        ctx.fillStyle = "rgba(255,255,255,0.7)";
-        ctx.fillRect(x + size * 0.12, y + size * 0.08, size * 0.12, size * 0.55);
+      if (img && img.complete && img.naturalWidth > 0) {
+        // Maintain aspect ratio roughly as wide rectangle
+        ctx.save();
+        const bob = Math.sin(globalTime * 4 + c.x * 0.05) * 3;
+        ctx.translate(0, bob);
+        ctx.drawImage(img, x, y, size, size * 0.6);
+        ctx.restore();
       } else {
-        const radius = size / 2;
-        const grad = ctx.createRadialGradient(
-          cx,
-          cy,
-          radius * 0.1,
-          cx,
-          cy,
-          radius
-        );
-        grad.addColorStop(0, "#f9a8d4");
-        grad.addColorStop(0.4, "#f97316");
-        grad.addColorStop(1, "#be185d");
-
-        ctx.fillStyle = grad;
-        ctx.beginPath();
-        ctx.arc(cx, cy, radius, 0, Math.PI * 2);
-        ctx.fill();
-
-        ctx.strokeStyle = "rgba(255,255,255,0.5)";
-        ctx.lineWidth = 1.2;
-        ctx.beginPath();
-        ctx.moveTo(cx, cy - radius * 0.9);
-        ctx.lineTo(cx, cy + radius * 0.9);
-        ctx.moveTo(cx - radius * 0.7, cy);
-        ctx.lineTo(cx + radius * 0.7, cy);
-        ctx.stroke();
+        // fallback simple shapes
+        ctx.fillStyle = c.brand === "centerFresh" ? "#22d3ee" : "#fb7185";
+        ctx.fillRect(x, y, size, size * 0.6);
       }
 
       if (c.glowing) {
@@ -688,13 +679,18 @@
         img = onionImages[o.imgIndex % onionImages.length];
       }
 
-      if (img && img.complete) {
+      if (img && img.complete && img.naturalWidth > 0) {
         ctx.save();
-        // slight bobbing
         const bob = Math.sin(globalTime * 4 + o.x * 0.1) * 4;
         ctx.translate(0, bob);
         ctx.drawImage(img, x, y, size, size);
         ctx.restore();
+      } else {
+        // fallback simple circle
+        ctx.fillStyle = o.kind === "garlic" ? "#f9fafb" : "#fb7185";
+        ctx.beginPath();
+        ctx.arc(cx, cy, size * 0.45, 0, Math.PI * 2);
+        ctx.fill();
       }
 
       // Pungent smell – yellow wavy lines above
@@ -754,7 +750,7 @@
         ctx.fill();
       }
 
-      if (playerImg.src) {
+      if (playerImg.src && playerImg.naturalWidth > 0) {
         ctx.drawImage(playerImg, px, py, playerWidth, playerHeight);
       } else {
         const radius = 12;
@@ -1029,13 +1025,13 @@
         "How to Play:\n\n" +
           "• Move left/right using ← → or A / D keys.\n" +
           "• On mobile, tap left/right side of the screen.\n" +
-          "• Collect Center Fresh mints (blue) and Center Fruit gums (pink/orange) to increase your Freshness Score.\n" +
-          "• Glowing items trigger power-ups:\n" +
+          "• Collect Center Fresh & Center Fruit packs to increase your Freshness Score.\n" +
+          "• Glowing packs trigger power-ups:\n" +
           "   – Fresh Boost: speed + protection from obstacles (with breeze effect)\n" +
           "   – Flavor Frenzy: magnet that pulls collectibles toward you (with orbiting fruits)\n" +
           "• Garlic & onion obstacles have pungent smell:\n" +
-          "   – First 2 hits: you slow down and they get attracted towards you.\n" +
-          "   – 3rd hit: you lose your last rose and the run ends.\n"
+          "   – First hits cost you roses (lives) and put you in stink mode (slow + they chase you).\n" +
+          "   – When all 3 roses are gone, the run ends.\n"
       );
     });
 
