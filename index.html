@@ -5,6 +5,9 @@
   <title>Center Fresh: Fresh Dash</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <style>
+    * {
+      box-sizing: border-box;
+    }
     * { box-sizing: border-box; }
 
     body {
@@ -12,6 +15,7 @@
       padding: 0;
       overflow: hidden;
       font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      background: #020617;
       background: #000;         /* no extra blue tint */
       color: #f5f7ff;
     }
@@ -36,34 +40,59 @@
       z-index: 10;
       display: flex;
       gap: 10px;
+      padding: 10px 14px;
+      background: rgba(3, 7, 18, 0.7);
       padding: 8px 12px;
       background: rgba(0,0,0,0.55);
       border-radius: 999px;
       backdrop-filter: blur(10px);
       align-items: center;
+      font-size: 14px;
       font-size: 13px;
       line-height: 1.2;
       white-space: nowrap;
     }
 
+    #scoreDisplay {
+      top: 10px;
+      left: 10px;
+    }
+
+    #levelDisplay {
+      top: 10px;
+      right: 10px;
+    }
     #scoreDisplay { top: 10px; left: 10px; }
     #levelDisplay { top: 10px; right: 10px; }
     #timerDisplay { top: 10px; left: 50%; transform: translateX(-50%); }
 
     #livesDisplay {
-      bottom: 10px;
-      left: 10px;
+      top: 10px;
+      left: 50%;
+      transform: translateX(-50%);
     }
 
     #powerupDisplay {
       bottom: 10px;
+      left: 50%;
+      transform: translateX(-50%);
+      padding-inline: 18px;
+      left: 10px;
+    }
+
+    #timerDisplay {
+    #powerupDisplay {
+      bottom: 10px;
+      left: 10px;
       right: 10px;
       padding-inline: 14px;
     }
 
     .badge {
+      padding: 4px 9px;
       padding: 3px 8px;
       border-radius: 999px;
+      font-size: 11px;
       font-size: 10px;
       text-transform: uppercase;
       letter-spacing: 0.08em;
@@ -105,6 +134,7 @@
       flex-direction: column;
       align-items: center;
       justify-content: center;
+      background: radial-gradient(circle at top, rgba(0, 195, 255, 0.24), rgba(0, 0, 0, 0.9));
       background: rgba(0,0,0,0.80);
       z-index: 20;
       text-align: center;
@@ -131,16 +161,21 @@
     }
 
     p.subtitle {
+      margin: 0 0 18px;
       margin: 0 0 16px;
       font-size: 14px;
       opacity: 0.9;
     }
 
     .brand-line {
+      margin-bottom: 18px;
       margin-bottom: 16px;
       font-size: 13px;
     }
 
+    .brand-line strong {
+      color: #a8fff1;
+    }
     .brand-line strong { color: #a8fff1; }
 
     .btn {
@@ -184,11 +219,18 @@
       max-width: 420px;
     }
 
+    #gameOverOverlay h2 {
+      margin-bottom: 6px;
+      font-size: 20px;
     #gameOverOverlay {
       padding: 0;
       flex-direction: column;
     }
 
+    #finalScore {
+      margin-bottom: 14px;
+      font-size: 14px;
+      opacity: 0.9;
     #resultImage {
       max-width: 100%;
       max-height: 100%;
@@ -196,6 +238,10 @@
       flex: 1;
     }
 
+    #tagline {
+      font-size: 12px;
+      margin-top: 4px;
+      opacity: 0.85;
     #gameOverControls {
       position: absolute;
       bottom: 20px;
@@ -217,6 +263,7 @@
 
     <!-- HUD -->
     <div id="scoreDisplay" class="hud">
+      <span>Freshness Score:&nbsp;<strong id="scoreValue">0</strong></span>
       <span>Freshness:&nbsp;<strong id="scoreValue">0</strong></span>
     </div>
 
@@ -229,6 +276,7 @@
     </div>
 
     <div id="livesDisplay" class="hud">
+      <span>Lives:&nbsp;<span id="livesValue"></span></span>
       <span>Roses:&nbsp;<span id="livesValue"></span></span>
     </div>
 
@@ -238,6 +286,10 @@
       <span class="badge badge-fruit" id="flavorFrenzyStatus" style="margin-left: 8px;">Flavor Frenzy: OFF</span>
     </div>
 
+    <div id="timerDisplay" class="hud">
+      <span>Time:&nbsp;<strong id="timerValue">60</strong>s</span>
+    </div>
+
     <!-- Start Screen -->
     <div id="startOverlay">
       <h1>
@@ -245,10 +297,14 @@
         <span>FRESH DASH</span>
       </h1>
       <p class="subtitle">
+        Dash through the aisles, collect mints & fruit gums, dodge garlic & onions.<br />
+        Stay Fresh. Stay Fun.
         Sonu must fix his bad breath before Sona says yes.<br />
         Dodge angry garlic & onions, grab Center Fresh & Center Fruit, and fill the Love bar in under 60 seconds.
       </p>
       <p class="brand-line">
+        <strong>Center Fresh – Fresh Boost:</strong> speed & protection.<br />
+        <strong>Center Fruit – Flavor Frenzy:</strong> magnet that pulls collectibles to you.
         <strong>Level 1 (0-20s):</strong> Warm-up, slower smells.<br/>
         <strong>Level 2 (20-40s):</strong> Faster spawn, more garlic & onions.<br/>
         <strong>Level 3 (40-60s):</strong> Chaos mode – only real lovers survive.<br/><br/>
@@ -257,6 +313,7 @@
       <button class="btn btn-primary" id="startButton">Tap to Play</button>
       <button class="btn btn-ghost" id="howToButton">How to Play</button>
       <div class="hint">
+        Controls: ← / → or A / D keys &nbsp;·&nbsp; On touch: tap left/right side of screen
         Controls: ← / → or A / D keys · On touch: tap left / right side of the screen.<br/>
         + Collect <strong>Center Fresh</strong> & <strong>Center Fruit</strong> → score + Love bar up + Sonu’s happy mood.<br/>
         + Hit <strong>garlic/onion</strong> → lose a rose, Love bar down, Sonu goes sad.<br/>
@@ -264,8 +321,14 @@
       </div>
     </div>
 
+    <!-- Game Over Screen -->
     <!-- Result Screen (full-screen panels) -->
     <div id="gameOverOverlay" style="display:none;">
+      <h2>Run Over!</h2>
+      <p id="finalScore"></p>
+      <p id="tagline">You dashed with Center Fresh & Center Fruit. Stay Fresh. Stay Fun.</p>
+      <button class="btn btn-primary" id="restartButton">Play Again</button>
+      <button class="btn btn-ghost" id="backToStartButton">Back to Start</button>
       <img id="resultImage" src="" alt="Result panel" />
       <div id="gameOverControls">
         <button class="btn btn-primary" id="restartButton">Play Again</button>
@@ -291,6 +354,7 @@
     // ========= Game State =========
     let gameRunning = false;
     let gameOver = false;
+    let globalTime = 0; // seconds, for animations
 
     let freshnessScore = 0;
     let level = 1;
@@ -299,10 +363,14 @@
     const maxLives = 3;
     let lives = maxLives;
 
+    const playerWidth = 80;
+    const playerHeight = 60;
     const playerWidth = 90;
     const playerHeight = 90;
     let playerX = 0;
     let playerY = 0;
+    let playerSpeed = 12;
+    const basePlayerSpeed = 12;
     let playerSpeed = 10;
     const basePlayerSpeed = 10;
 
@@ -311,12 +379,23 @@
     const obstacles = [];
     const objectSize = 60;
 
+    // Timer & Level
+    const totalTime = 60;          // 1 minute total
+    const levelDuration = totalTime / 3; // 20s per level
+    let elapsedTime = 0;
+    let lastTimestamp = null;
+
+    // Love meter
+    let loveMeter = 0;
+    const loveMeterMax = 100;
+
     // Power-ups
     let freshBoostActive = false;
     let flavorFrenzyActive = false;
     let freshBoostTimeoutId = null;
     let flavorFrenzyTimeoutId = null;
 
+    // Stink mode (after garlic/onion hit)
     // Stink mode
     let stinkModeActive = false;
     let stinkModeTimeoutId = null;
@@ -343,6 +422,7 @@
     const freshBoostStatusEl = document.getElementById("freshBoostStatus");
     const flavorFrenzyStatusEl = document.getElementById("flavorFrenzyStatus");
     const livesValueEl = document.getElementById("livesValue");
+    const timerValueEl = document.getElementById("timerValue");
 
     // Overlays & buttons
     const startOverlay = document.getElementById("startOverlay");
@@ -351,42 +431,72 @@
     const howToButton = document.getElementById("howToButton");
     const restartButton = document.getElementById("restartButton");
     const backToStartButton = document.getElementById("backToStartButton");
+    const finalScoreEl = document.getElementById("finalScore");
     const resultImageEl = document.getElementById("resultImage");
 
     // ========= Assets =========
-function loadImage(src) {
-  const img = new Image();
-  img.src = src;
-  return img;
-}
+    const bgImg = new Image();
+    bgImg.src = "./images/supermarket.jpg";
 
-// Background
-const bgImg = loadImage("./images/supermarket.jpg");
+    const centerFreshImg = new Image();
+    centerFreshImg.src = "./images/centerfresh.png";
 
-// Collectibles
-const centerFreshImg = loadImage("./images/centerfresh.png");
-const centerFruitImg = loadImage("./images/centerfruit.png");
+    const centerFruitImg = new Image();
+    centerFruitImg.src = "./images/centerfruit.png";
 
-// Obstacles
-const garlicImages = [ loadImage("./images/garlic.png") ];
-const onionImages  = [
-  loadImage("./images/onion1.png"),
-  loadImage("./images/onion2.png")
-];
+    const garlicImages = [];
+    const onionImages = [];
 
-// Player moods (moving Sonu avatar)
-const boyNormalImg = loadImage("./images/runnerBoy_normal.png");
-const boyHappyImg  = loadImage("./images/runnerBoy_happy.png");
-const boySadImg    = loadImage("./images/runnerBoy_sad.png");
+    function loadImage(src) {
+      const img = new Image();
+      img.src = src;
+      return img;
+    }
 
-// Love bar characters (top HUD)
-const loveBoyImg   = loadImage("./images/love_boy.png");
-const loveGirlImg  = loadImage("./images/love_girl.png");
+    garlicImages.push(loadImage("./images/garlic.png"));
+    onionImages.push(loadImage("./images/onion1.png"));
+    onionImages.push(loadImage("./images/onion2.png"));
 
-// Result panels (full-screen endings)
-const resultFailLvl1Img = loadImage("./images/outcome_fail_level1.png");
-const resultFailLvl2Img = loadImage("./images/outcome_fail_level2.png");
-const resultSuccessImg  = loadImage("./images/outcome_success.png");
+    const sonuNormalImg = new Image();
+    sonuNormalImg.src = "./images/sonu_normal.png";
+    // Background
+    const bgImg = loadImage("./images/supermarket.jpg");
+
+    const sonuJoyImg = new Image();
+    sonuJoyImg.src = "./images/sonu_joy.png";
+    // Collectibles
+    const centerFreshImg = loadImage("./images/centerfresh.png");
+    const centerFruitImg = loadImage("./images/centerfruit.png");
+
+    const sonuGloomyImg = new Image();
+    sonuGloomyImg.src = "./images/sonu_gloomy.png";
+    // Obstacles
+    const garlicImages = [ loadImage("./images/garlic.png") ];
+    const onionImages  = [ loadImage("./images/onion1.png"), loadImage("./images/onion2.png") ];
+
+    const loveBoyImg = new Image();
+    loveBoyImg.src = "./images/love_boy.png";
+    // Player moods
+    const boyNormalImg = loadImage("./images/boy_normal.png");
+    const boyHappyImg  = loadImage("./images/boy_happy.png");
+    const boySadImg    = loadImage("./images/boy_sad.png");
+
+    const loveGirlImg = new Image();
+    loveGirlImg.src = "./images/love_girl.png";
+    // Love bar characters
+    const loveBoyImg   = loadImage("./images/love_boy.png");
+    const loveGirlImg  = loadImage("./images/love_girl.png");
+
+    const soundCollect = new Audio();
+    const soundGameOver = new Audio();
+    const soundFreshBoost = new Audio();
+    const soundFlavorFrenzy = new Audio();
+    const soundObstacleHit = new Audio();
+    // You can assign .src to these if you add audio files.
+    // Result panels
+    const resultFailLvl1Img = loadImage("./images/result_fail_lvl1.png");
+    const resultFailLvl2Img = loadImage("./images/result_fail_lvl2.png");
+    const resultSuccessImg  = loadImage("./images/result_success.png");
 
     // ========= Utility =========
     function randBetween(min, max) {
@@ -427,12 +537,16 @@ const resultSuccessImg  = loadImage("./images/outcome_success.png");
     function initGameState() {
       freshnessScore = 0;
       level = 1;
+      lives = maxLives;
       currentLevel = 1;
       gameSpeed = 3;
       playerSpeed = basePlayerSpeed;
+
+      loveMeter = 0;
       lives = maxLives;
       loveProgress = 0.2;       // small starting crush
       elapsedTime = 0;
+      lastTimestamp = null;
       lastFrameTime = null;
       boyMood = "normal";
 
@@ -451,6 +565,7 @@ const resultSuccessImg  = loadImage("./images/outcome_success.png");
 
       updateDifficultyForLevel(1);
       updateHUD();
+      timerValueEl.textContent = totalTime.toString();
     }
 
     function updateDifficultyForLevel(lvl) {
@@ -480,9 +595,21 @@ const resultSuccessImg  = loadImage("./images/outcome_success.png");
       gameOverOverlay.style.display = "none";
 
       initGameState();
+
+      collectibleSpawnId = setInterval(() => {
+        if (!gameRunning) return;
+        spawnCollectible();
+      }, 650);
+
+      obstacleSpawnId = setInterval(() => {
+        if (!gameRunning) return;
+        spawnObstacle();
+      }, 950);
+
       requestAnimationFrame(gameLoop);
     }
 
+    function endGame(status) {
     function endGame(outcome) {
       gameRunning = false;
       gameOver = true;
@@ -494,6 +621,14 @@ const resultSuccessImg  = loadImage("./images/outcome_success.png");
       deactivateFlavorFrenzy();
       deactivateStinkMode();
 
+      let resultText = "Freshness Score: " + freshnessScore + " · Level reached: " + level;
+
+      if (status === "success") {
+        resultText += " · Sona says YES! 💚";
+      } else if (status === "timeout") {
+        resultText += " · Time up before you won her heart.";
+      } else if (status === "lives") {
+        resultText += " · You ran out of roses.";
       // Pick appropriate panel
       if (outcome === "success") {
         resultImageEl.src = resultSuccessImg.src;
@@ -504,6 +639,7 @@ const resultSuccessImg  = loadImage("./images/outcome_success.png");
         resultImageEl.src = resultFailLvl2Img.src;
       }
 
+      finalScoreEl.textContent = resultText;
       gameOverOverlay.style.display = "flex";
     }
 
@@ -550,6 +686,8 @@ const resultSuccessImg  = loadImage("./images/outcome_success.png");
     function activateFreshBoost() {
       if (freshBoostActive) return;
       freshBoostActive = true;
+      playerSpeed += 4;
+      updateHUD();
       playerSpeed += 3;
       freshBoostStatusEl.textContent = "Fresh Boost: ON";
 
@@ -561,17 +699,20 @@ const resultSuccessImg  = loadImage("./images/outcome_success.png");
     function deactivateFreshBoost() {
       if (!freshBoostActive) return;
       freshBoostActive = false;
+      playerSpeed -= 4;
       playerSpeed -= 3;
       if (freshBoostTimeoutId) {
         clearTimeout(freshBoostTimeoutId);
         freshBoostTimeoutId = null;
       }
+      updateHUD();
       freshBoostStatusEl.textContent = "Fresh Boost: OFF";
     }
 
     function activateFlavorFrenzy() {
       if (flavorFrenzyActive) return;
       flavorFrenzyActive = true;
+      updateHUD();
       flavorFrenzyStatusEl.textContent = "Flavor Frenzy: ON";
 
       flavorFrenzyTimeoutId = setTimeout(() => {
@@ -586,6 +727,7 @@ const resultSuccessImg  = loadImage("./images/outcome_success.png");
         clearTimeout(flavorFrenzyTimeoutId);
         flavorFrenzyTimeoutId = null;
       }
+      updateHUD();
       flavorFrenzyStatusEl.textContent = "Flavor Frenzy: OFF";
     }
 
@@ -594,6 +736,9 @@ const resultSuccessImg  = loadImage("./images/outcome_success.png");
       if (!stinkModeActive) {
         stinkModeActive = true;
         playerSpeed = 7;
+      }
+      if (stinkModeTimeoutId) {
+        clearTimeout(stinkModeTimeoutId);
       }
       if (stinkModeTimeoutId) clearTimeout(stinkModeTimeoutId);
       stinkModeTimeoutId = setTimeout(() => {
@@ -610,18 +755,73 @@ const resultSuccessImg  = loadImage("./images/outcome_success.png");
       playerSpeed = basePlayerSpeed;
     }
 
+    // ========= Drawing Helpers =========
     // ========= Drawing =========
     function drawBackground() {
+      if (bgImg.complete && bgImg.naturalWidth > 0) {
       if (bgImg.complete) {
         ctx.drawImage(bgImg, 0, 0, canvas.width, canvas.height);
+        ctx.fillStyle = "rgba(15,23,42,0.45)";
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
       } else {
+        const g = ctx.createLinearGradient(0, 0, 0, canvas.height);
+        g.addColorStop(0, "#020617");
+        g.addColorStop(0.4, "#05192c");
+        g.addColorStop(1, "#020617");
+        ctx.fillStyle = g;
         ctx.fillStyle = "#111";
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+      }
+
+      // Lane lines
+      ctx.strokeStyle = "rgba(148,163,184,0.2)";
+      ctx.lineWidth = 1;
+      const laneCount = 4;
+      for (let i = 1; i < laneCount; i++) {
+        const x = (canvas.width / laneCount) * i;
+        ctx.beginPath();
+        ctx.moveTo(x, 0);
+        ctx.lineTo(x, canvas.height);
+        ctx.stroke();
+      }
+
+      // Ambient light dots
+      for (let i = 0; i < 18; i++) {
+        const r = randBetween(4, 14);
+        const x = randBetween(0, canvas.width);
+        const y = randBetween(0, canvas.height);
+        ctx.fillStyle = "rgba(56,189,248,0.04)";
+        ctx.beginPath();
+        ctx.arc(x, y, r, 0, Math.PI * 2);
+        ctx.fill();
+      }
+
+      if (stinkModeActive) {
+        ctx.fillStyle = "rgba(234, 179, 8, 0.14)";
         ctx.fillRect(0, 0, canvas.width, canvas.height);
       }
     }
 
+    function drawFreshBreezeOverlay() {
+      ctx.save();
+      ctx.translate(-canvas.height * 0.2, 0);
+      ctx.rotate(-Math.PI / 8);
+
+      const stripeWidth = 42;
+      const speed = 120;
+      const offset = (globalTime * speed) % stripeWidth;
+
+      for (let x = -stripeWidth * 2; x < canvas.width + canvas.height; x += stripeWidth) {
+        ctx.fillStyle = "rgba(56,189,248,0.10)";
+        ctx.fillRect(x + offset, 0, stripeWidth * 0.45, canvas.height * 1.5);
+      }
+
+      ctx.restore();
+    }
+
     function drawCollectible(c) {
       const baseSize = c.size;
+      const pulse = c.glowing ? 1 + 0.12 * Math.sin(globalTime * 6 + c.x * 0.1) : 1;
       const pulse = c.glowing ? 1 + 0.12 * Math.sin(performance.now() / 160 + c.x * 0.1) : 1;
       const size = baseSize * pulse;
 
@@ -630,8 +830,29 @@ const resultSuccessImg  = loadImage("./images/outcome_success.png");
       const x = cx - size / 2;
       const y = cy - size / 2;
 
+      let img = c.brand === "centerFresh" ? centerFreshImg : centerFruitImg;
+
+      if (img.complete && img.naturalWidth > 0) {
+        ctx.drawImage(img, x, y, size, size);
+      } else {
+        // fallback shapes
+        ctx.fillStyle = c.brand === "centerFresh" ? "#0ea5e9" : "#f97316";
+        ctx.beginPath();
+        ctx.arc(cx, cy, size / 2, 0, Math.PI * 2);
+        ctx.fill();
+      }
       const img = c.brand === "centerFresh" ? centerFreshImg : centerFruitImg;
 
+      if (c.glowing) {
+        const ringRadius = size * 0.6 + 4 * Math.sin(globalTime * 5);
+        ctx.strokeStyle =
+          c.brand === "centerFresh"
+            ? "rgba(125, 249, 255, 0.9)"
+            : "rgba(255, 209, 249, 0.9)";
+        ctx.lineWidth = 2;
+        ctx.beginPath();
+        ctx.arc(cx, cy, ringRadius, 0, Math.PI * 2);
+        ctx.stroke();
       if (img && img.complete) {
         ctx.drawImage(img, x, y, size, size * 0.65);
       }
@@ -639,6 +860,7 @@ const resultSuccessImg  = loadImage("./images/outcome_success.png");
 
     function drawObstacle(o) {
       const baseSize = o.size;
+      const wobbleScale = 1 + 0.15 * Math.sin(globalTime * 5 + o.x * 0.25);
       const wobbleScale = 1 + 0.08 * Math.sin(performance.now() / 180 + o.x * 0.25);
       const size = baseSize * wobbleScale;
 
@@ -654,8 +876,29 @@ const resultSuccessImg  = loadImage("./images/outcome_success.png");
         img = onionImages[o.imgIndex % onionImages.length];
       }
 
+      if (img && img.complete && img.naturalWidth > 0) {
+        ctx.save();
+        const bob = Math.sin(globalTime * 4 + o.x * 0.1) * 4;
+        ctx.translate(0, bob);
       if (img && img.complete) {
         ctx.drawImage(img, x, y, size, size);
+        ctx.restore();
+      }
+
+      // Pungent smell lines
+      ctx.strokeStyle = "rgba(234, 179, 8, 0.8)";
+      ctx.lineWidth = 1.4;
+      for (let i = -1; i <= 1; i++) {
+        const sx = cx + i * (size * 0.25);
+        ctx.beginPath();
+        ctx.moveTo(sx, cy - size * 0.1);
+        ctx.quadraticCurveTo(
+          sx + 5 * Math.sin(globalTime * 2.5 + i),
+          cy - size * 0.4,
+          sx,
+          cy - size * 0.7
+        );
+        ctx.stroke();
       }
     }
 
@@ -663,21 +906,117 @@ const resultSuccessImg  = loadImage("./images/outcome_success.png");
       const px = playerX;
       const py = playerY;
 
+      const glowRadius = freshBoostActive || flavorFrenzyActive ? 24 : 0;
+
+      if (glowRadius > 0) {
+        const gradient = ctx.createRadialGradient(
+          px + playerWidth / 2,
+          py + playerHeight / 2,
+          4,
+          px + playerWidth / 2,
+          py + playerHeight / 2,
+          glowRadius
+        );
+        if (freshBoostActive && flavorFrenzyActive) {
+          gradient.addColorStop(0, "rgba(0,255,214,0.9)");
+          gradient.addColorStop(1, "rgba(255,102,196,0.7)");
+        } else if (freshBoostActive) {
+          gradient.addColorStop(0, "rgba(0,255,214,0.8)");
+          gradient.addColorStop(1, "rgba(0,180,255,0.4)");
+        } else if (flavorFrenzyActive) {
+          gradient.addColorStop(0, "rgba(255,153,230,0.8)");
+          gradient.addColorStop(1, "rgba(255,102,196,0.4)");
+        }
+        ctx.fillStyle = gradient;
+        ctx.beginPath();
+        ctx.ellipse(
+          px + playerWidth / 2,
+          py + playerHeight,
+          playerWidth * 0.7,
+          playerHeight * 0.7,
+          0,
+          0,
+          Math.PI * 2
+        );
+        ctx.fill();
+      }
+
+      let playerSprite = sonuNormalImg;
+      if (stinkModeActive) {
+        playerSprite = sonuGloomyImg;
+      } else if (freshBoostActive || flavorFrenzyActive) {
+        playerSprite = sonuJoyImg;
+      }
+
+      if (playerSprite.complete && playerSprite.naturalWidth > 0) {
+        ctx.drawImage(playerSprite, px, py, playerWidth, playerHeight);
       const img = getBoyImageForMood();
       if (img && img.complete) {
         ctx.drawImage(img, px, py, playerWidth, playerHeight);
       } else {
+        // fallback block
+        const radius = 12;
         // fallback – blue circle
         ctx.fillStyle = "#0ea5e9";
         ctx.beginPath();
+        ctx.moveTo(px + radius, py);
+        ctx.lineTo(px + playerWidth - radius, py);
+        ctx.quadraticCurveTo(px + playerWidth, py, px + playerWidth, py + radius);
+        ctx.lineTo(px + playerWidth, py + playerHeight - radius);
+        ctx.quadraticCurveTo(
+          px + playerWidth,
+          py + playerHeight,
+          px + playerWidth - radius,
+          py + playerHeight
+        );
+        ctx.lineTo(px + radius, py + playerHeight);
+        ctx.quadraticCurveTo(px, py + playerHeight, px, py + playerHeight - radius);
+        ctx.lineTo(px, py + radius);
+        ctx.quadraticCurveTo(px, py, px + radius, py);
         ctx.arc(px + playerWidth/2, py + playerHeight/2, playerWidth/2, 0, Math.PI*2);
         ctx.fill();
+
+        ctx.fillStyle = "#e0faff";
+        ctx.fillRect(px + 10, py + 10, playerWidth - 20, playerHeight - 20);
+        ctx.fillStyle = "#0f172a";
+        ctx.font = "bold 14px system-ui";
+        ctx.textAlign = "center";
+        ctx.fillText("CF", px + playerWidth / 2, py + playerHeight / 2 + 4);
+      }
+
+      if (flavorFrenzyActive) {
+        const centerX = px + playerWidth / 2;
+        const centerY = py + playerHeight / 2;
+        const orbitRadius = playerWidth * 0.8;
+        const dotCount = 6;
+
+        for (let i = 0; i < dotCount; i++) {
+          const angle = globalTime * 3 + (i * (Math.PI * 2)) / dotCount;
+          const dx = centerX + orbitRadius * Math.cos(angle);
+          const dy = centerY + orbitRadius * Math.sin(angle);
+
+          ctx.beginPath();
+          ctx.arc(dx, dy, 5, 0, Math.PI * 2);
+          ctx.fillStyle = i % 2 === 0 ? "#f97316" : "#f9a8d4";
+          ctx.fill();
+        }
       }
     }
 
+    function drawLoveMeter() {
+      const barWidth = Math.min(420, canvas.width * 0.7);
+      const barHeight = 16;
+      const barY = 60;
+      const centerX = canvas.width / 2;
+      const barX = centerX - barWidth / 2;
     function drawLoveBar() {
       loveCtx.clearRect(0, 0, loveBarCanvas.width, loveBarCanvas.height);
 
+      // Bar background
+      ctx.fillStyle = "rgba(15,23,42,0.85)";
+      ctx.beginPath();
+      if (ctx.roundRect) {
+        ctx.roundRect(barX, barY, barWidth, barHeight, 999);
       const w = loveBarCanvas.width;
       const h = loveBarCanvas.height;
       const barWidth = 200;
@@ -697,23 +1036,43 @@ const resultSuccessImg  = loadImage("./images/outcome_success.png");
       if (boyImg && boyImg.complete) {
         loveCtx.drawImage(boyImg, boyX, boyY, iconSize, iconSize);
       } else {
+        ctx.rect(barX, barY, barWidth, barHeight);
         loveCtx.fillStyle = "#f97316";
         loveCtx.beginPath();
         loveCtx.arc(boyX + iconSize / 2, boyY + iconSize / 2, iconSize / 2, 0, Math.PI * 2);
         loveCtx.fill();
       }
+      ctx.fill();
+
+      // Filled part
+      const ratio = Math.max(0, Math.min(1, loveMeter / loveMeterMax));
+      const fillWidth = barWidth * ratio;
+      const grad = ctx.createLinearGradient(barX, barY, barX + barWidth, barY);
+      grad.addColorStop(0, "#22c55e");
+      grad.addColorStop(1, "#a3e635");
+      ctx.fillStyle = grad;
+      ctx.beginPath();
+      if (ctx.roundRect) {
+        ctx.roundRect(barX, barY, fillWidth, barHeight, 999);
 
       // Girl (right)
       const girlImg = loveGirlImg;
       if (girlImg && girlImg.complete) {
         loveCtx.drawImage(girlImg, girlX, girlY, iconSize, iconSize);
       } else {
+        ctx.rect(barX, barY, fillWidth, barHeight);
         loveCtx.fillStyle = "#ec4899";
         loveCtx.beginPath();
         loveCtx.arc(girlX + iconSize / 2, girlY + iconSize / 2, iconSize / 2, 0, Math.PI * 2);
         loveCtx.fill();
       }
+      ctx.fill();
 
+      // Boy & girl icons
+      const iconSize = 32;
+      const iconY = barY + barHeight / 2 - iconSize / 2;
+      const boyX = barX - iconSize - 10;
+      const girlX = barX + barWidth + 10;
       // Bar background
       loveCtx.fillStyle = "rgba(15,23,42,0.9)";
       loveCtx.roundRect(barX, barY, barWidth, barHeight, 999);
@@ -726,12 +1085,16 @@ const resultSuccessImg  = loadImage("./images/outcome_success.png");
       grad.addColorStop(0.5, "#facc15"); // yellow
       grad.addColorStop(1, "#22c55e"); // green
 
+      if (loveBoyImg.complete && loveBoyImg.naturalWidth > 0) {
+        ctx.drawImage(loveBoyImg, boyX, iconY, iconSize, iconSize);
       const filledWidth = barWidth * p;
       if (filledWidth > 0) {
         loveCtx.fillStyle = grad;
         loveCtx.roundRect(barX, barY, filledWidth, barHeight, 999);
         loveCtx.fill();
       }
+      if (loveGirlImg.complete && loveGirlImg.naturalWidth > 0) {
+        ctx.drawImage(loveGirlImg, girlX, iconY, iconSize, iconSize);
 
       // Border
       loveCtx.strokeStyle = "rgba(248,250,252,0.9)";
@@ -757,6 +1120,10 @@ const resultSuccessImg  = loadImage("./images/outcome_success.png");
     // ========= HUD =========
     function updateHUD() {
       scoreValueEl.textContent = freshnessScore.toString();
+      levelValueEl.textContent = level.toString();
+
+      freshBoostStatusEl.textContent = "Fresh Boost: " + (freshBoostActive ? "ON" : "OFF");
+      flavorFrenzyStatusEl.textContent = "Flavor Frenzy: " + (flavorFrenzyActive ? "ON" : "OFF");
       levelValueEl.textContent = currentLevel.toString();
       const remaining = Math.max(0, Math.ceil(TOTAL_TIME - elapsedTime));
       timerValueEl.textContent = remaining.toString();
@@ -774,12 +1141,34 @@ const resultSuccessImg  = loadImage("./images/outcome_success.png");
     function gameLoop(timestamp) {
       if (!gameRunning) return;
 
+      if (!timestamp) timestamp = 0;
+      globalTime = timestamp / 1000;
+
+      if (lastTimestamp == null) lastTimestamp = timestamp;
+      const deltaSec = (timestamp - lastTimestamp) / 1000;
+      lastTimestamp = timestamp;
       if (lastFrameTime == null) lastFrameTime = timestamp;
       const deltaSec = (timestamp - lastFrameTime) / 1000;
       lastFrameTime = timestamp;
 
       elapsedTime += deltaSec;
+      const remainingTime = Math.max(0, totalTime - elapsedTime);
+      timerValueEl.textContent = Math.ceil(remainingTime).toString();
 
+      // Level from time
+      const prevLevel = level;
+      if (elapsedTime < levelDuration) {
+        level = 1;
+        gameSpeed = 3;
+      } else if (elapsedTime < levelDuration * 2) {
+        level = 2;
+        gameSpeed = 4;
+      } else {
+        level = 3;
+        gameSpeed = 5;
+      }
+      if (level !== prevLevel) {
+        updateHUD();
       // Level progression based on time
       const newLevel = Math.min(3, Math.floor(elapsedTime / LEVEL_TIME) + 1);
       if (newLevel !== currentLevel) {
@@ -787,20 +1176,31 @@ const resultSuccessImg  = loadImage("./images/outcome_success.png");
         updateDifficultyForLevel(currentLevel);
       }
 
+      if (remainingTime <= 0) {
+        // Check success based on love meter
+        if (loveMeter >= loveMeterMax * 0.9) {
       // Check global timer end
       if (elapsedTime >= TOTAL_TIME) {
         const successThreshold = 0.85;
         if (loveProgress >= successThreshold && lives > 0) {
           endGame("success");
         } else {
+          endGame("timeout");
           endGame("fail_lvl3");
         }
         return;
       }
 
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
       // Clear and draw background
       drawBackground();
+      drawLoveMeter();
 
+      if (freshBoostActive) {
+        drawFreshBreezeOverlay();
+      }
+
+      // Collectibles update
       // Update collectibles
       for (let i = collectibles.length - 1; i >= 0; i--) {
         const c = collectibles[i];
@@ -814,6 +1214,7 @@ const resultSuccessImg  = loadImage("./images/outcome_success.png");
           const dx = playerCenterX - cCenterX;
           const dy = playerCenterY - cCenterY;
           const dist = Math.sqrt(dx * dx + dy * dy);
+          const magnetRadius = 240;
           const magnetRadius = 260;
 
           if (dist < magnetRadius && dist > 1) {
@@ -837,6 +1238,10 @@ const resultSuccessImg  = loadImage("./images/outcome_success.png");
           const bonus = c.glowing ? (c.brand === "centerFresh" ? 25 : 20) : 0;
           freshnessScore += base + bonus;
 
+          // Love meter boost
+          let loveBoost = c.brand === "centerFresh" ? 6 : 4;
+          if (c.glowing) loveBoost += 3;
+          loveMeter = Math.min(loveMeterMax, loveMeter + loveBoost);
           // Love bar up
           let loveGain = 0.03;
           if (c.glowing) loveGain += 0.05;
@@ -851,6 +1256,7 @@ const resultSuccessImg  = loadImage("./images/outcome_success.png");
           }
 
           collectibles.splice(i, 1);
+          updateHUD();
           continue;
         }
 
@@ -859,6 +1265,7 @@ const resultSuccessImg  = loadImage("./images/outcome_success.png");
         }
       }
 
+      // Obstacles update
       // Update obstacles
       for (let i = obstacles.length - 1; i >= 0; i--) {
         const o = obstacles[i];
@@ -872,6 +1279,7 @@ const resultSuccessImg  = loadImage("./images/outcome_success.png");
           const dx = playerCenterX - oCenterX;
           const dy = playerCenterY - oCenterY;
           const dist = Math.sqrt(dx * dx + dy * dy);
+          const magnetRadius = 280;
           const magnetRadius = 260;
 
           if (dist < magnetRadius && dist > 1) {
@@ -900,9 +1308,12 @@ const resultSuccessImg  = loadImage("./images/outcome_success.png");
             loveProgress = clamp(loveProgress - 0.2, 0, 1);
             setBoyMood("sad");
             activateStinkMode();
+            loveMeter = Math.max(0, loveMeter - 12);
             obstacles.splice(i, 1);
+            updateHUD();
 
             if (lives <= 0) {
+              endGame("lives");
               // Early fail – choose ending based on current level
               if (currentLevel === 1) {
                 endGame("fail_lvl1");
@@ -926,6 +1337,10 @@ const resultSuccessImg  = loadImage("./images/outcome_success.png");
     }
 
     // ========= Controls =========
+    const keys = {
+      left: false,
+      right: false
+    };
     const keys = { left: false, right: false };
 
     document.addEventListener("keydown", (e) => {
@@ -966,6 +1381,12 @@ const resultSuccessImg  = loadImage("./images/outcome_success.png");
 
     // Continuous player movement
     function updatePlayerPosition() {
+      if (keys.left) {
+        playerX -= playerSpeed;
+      }
+      if (keys.right) {
+        playerX += playerSpeed;
+      }
       if (keys.left) playerX -= playerSpeed;
       if (keys.right) playerX += playerSpeed;
 
@@ -984,6 +1405,19 @@ const resultSuccessImg  = loadImage("./images/outcome_success.png");
 
     howToButton.addEventListener("click", () => {
       alert(
+        "How to Play:\n\n" +
+          "• You have 1 minute and 3 levels (20s each).\n" +
+          "• Move left/right using ← → or A / D keys.\n" +
+          "• On mobile, tap left/right side of the screen.\n" +
+          "• Collect Center Fresh (blue pack) & Center Fruit (pink pack) to increase your Freshness Score and fill the love bar.\n" +
+          "• Glowing items trigger power-ups:\n" +
+          "   – Fresh Boost: speed + protection (blue breeze)\n" +
+          "   – Flavor Frenzy: magnet that pulls collectibles (fruit orbit)\n" +
+          "• Garlic & onion obstacles:\n" +
+          "   – Each hit costs 1 rose & reduces the love bar.\n" +
+          "   – While stinky, garlic/onions get attracted to you and you move slower.\n" +
+          "• Lose all 3 roses → game over.\n" +
+          "• Fill the love bar before time runs out to win Sona’s heart!"
         "Story & Rules:\\n\\n" +
         "• Sonu has 60 seconds to fix his breath and fill the Love bar.\\n" +
         "• Level 1 (0–20s): slower game, good to warm up.\\n" +
@@ -1016,5 +1450,3 @@ const resultSuccessImg  = loadImage("./images/outcome_success.png");
   </script>
 </body>
 </html>
-      
-
