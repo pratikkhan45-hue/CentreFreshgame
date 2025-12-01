@@ -14,7 +14,7 @@
       padding: 0;
       overflow: hidden;
       font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
-      background: #020617;
+      background: #000;
       color: #f5f7ff;
     }
 
@@ -99,7 +99,7 @@
       flex-direction: column;
       align-items: center;
       justify-content: center;
-      background: radial-gradient(circle at top, rgba(0, 195, 255, 0.3), rgba(0, 0, 0, 0.92));
+      background: radial-gradient(circle at top, rgba(0, 195, 255, 0.24), rgba(0, 0, 0, 0.9));
       z-index: 20;
       text-align: center;
       padding: 20px;
@@ -180,7 +180,7 @@
     }
 
     #finalScore {
-      margin-bottom: 14px;
+      margin-bottom: 10px;
       font-size: 14px;
       opacity: 0.9;
     }
@@ -188,7 +188,16 @@
     #tagline {
       font-size: 12px;
       margin-top: 4px;
-      opacity: 0.85;
+      opacity: 0.9;
+    }
+
+    #endingImage {
+      max-width: min(80vw, 420px);
+      height: auto;
+      border-radius: 16px;
+      margin-bottom: 12px;
+      box-shadow: 0 18px 45px rgba(15, 23, 42, 0.9);
+      object-fit: contain;
     }
   </style>
 </head>
@@ -203,6 +212,7 @@
 
     <div id="levelDisplay" class="hud">
       <span>Level:&nbsp;<strong id="levelValue">1</strong></span>
+      <span style="margin-left:8px;">Time:&nbsp;<strong id="timerValue">60</strong>s</span>
     </div>
 
     <div id="livesDisplay" class="hud">
@@ -222,7 +232,7 @@
         <span>FRESH DASH</span>
       </h1>
       <p class="subtitle">
-        Dash through the supermarket aisle, collect Center Fresh & Center Fruit, dodge angry garlics & onions.<br />
+        Sonu has one minute to dodge garlic & onions, grab freshness, and win Sona’s heart.<br />
         Stay Fresh. Stay Fun.
       </p>
       <p class="brand-line">
@@ -239,6 +249,7 @@
     <!-- Game Over Screen -->
     <div id="gameOverOverlay" style="display:none;">
       <h2>Run Over!</h2>
+      <img id="endingImage" src="" alt="Ending panel" />
       <p id="finalScore"></p>
       <p id="tagline">You dashed with Center Fresh & Center Fruit. Stay Fresh. Stay Fun.</p>
       <button class="btn btn-primary" id="restartButton">Play Again</button>
@@ -254,7 +265,6 @@
     function resizeCanvas() {
       canvas.width = window.innerWidth;
       canvas.height = window.innerHeight;
-      // Keep player near bottom after resize
       playerY = canvas.height * 0.75 - playerHeight / 2;
     }
 
@@ -271,19 +281,28 @@
 
     const playerWidth = 80;
     const playerHeight = 50;
-    let playerX = 0; // set properly in init()
+    let playerX = 0;
     let playerY = 0;
     let playerSpeed = 12;
     const basePlayerSpeed = 12;
 
-    let gameSpeed = 3; // how fast things fall
+    let gameSpeed = 3;
     const baseGameSpeed = 3;
 
     const collectibles = []; // Center Fresh & Center Fruit
     const obstacles = [];    // Garlic & Onion
 
-    const objectSize = 64;   // size for candies/obstacles
+    const objectSize = 60;
 
+    // Time & level system
+    const gameTotalTimeMs = 60000;   // 1 minute total
+    const levelCount = 3;
+    const levelDurationMs = gameTotalTimeMs / levelCount; // 20s per level
+    let gameStartTimestamp = null;
+    let remainingTimeMs = gameTotalTimeMs;
+
+    // Love bar mechanics
+    const loveFullScore = 500; // score needed to "fill" love bar
     // Power-ups
     let freshBoostActive = false;
     let flavorFrenzyActive = false;
@@ -297,11 +316,11 @@
     // Timers
     let collectibleSpawnId = null;
     let obstacleSpawnId = null;
-    let difficultyIncreaseId = null;
 
     // HUD elements
     const scoreValueEl = document.getElementById("scoreValue");
     const levelValueEl = document.getElementById("levelValue");
+    const timerValueEl = document.getElementById("timerValue");
     const freshBoostStatusEl = document.getElementById("freshBoostStatus");
     const flavorFrenzyStatusEl = document.getElementById("flavorFrenzyStatus");
     const livesValueEl = document.getElementById("livesValue");
@@ -314,18 +333,20 @@
     const restartButton = document.getElementById("restartButton");
     const backToStartButton = document.getElementById("backToStartButton");
     const finalScoreEl = document.getElementById("finalScore");
+    const gameOverTitleEl = document.querySelector("#gameOverOverlay h2");
+    const endingImageEl = document.getElementById("endingImage");
+    const taglineEl = document.getElementById("tagline");
 
     // ========= Assets =========
-    const playerImg = new Image(); // optional if you want a custom player sprite
+    const playerImg = new Image(); // optional custom runner sprite
+    // playerImg.src = "./images/sonu_runner.png";
 
-    // Candies
     const centerFreshImg = new Image();
     centerFreshImg.src = "./images/centerfresh.png";
 
     const centerFruitImg = new Image();
     centerFruitImg.src = "./images/centerfruit.png";
 
-    // Obstacles
     const garlicImages = [];
     const onionImages = [];
 
@@ -339,16 +360,23 @@
     onionImages.push(loadImage("./images/onion1.png"));
     onionImages.push(loadImage("./images/onion2.png"));
 
-    // Background
-    const supermarketImg = new Image();
-    supermarketImg.src = "./images/supermarket.jpg";
+    const backgroundImg = new Image();
+    let backgroundReady = false;
+    backgroundImg.src = "./images/supermarket.jpg";
+    backgroundImg.onload = () => {
+      backgroundReady = true;
+    };
 
-    const soundCollect = new Audio();
-    const soundGameOver = new Audio();
-    const soundFreshBoost = new Audio();
-    const soundFlavorFrenzy = new Audio();
-    const soundObstacleHit = new Audio();
-    // (Hook up sounds if you add files)
+    const loveBoyImg = new Image();
+    loveBoyImg.src = "./images/love_boy.png";
+
+    const loveGirlImg = new Image();
+    loveGirlImg.src = "./images/love_girl.png";
+
+    // Ending panels
+    const endingLevel1ImgPath = "./images/ending_level1.png";
+    const endingLevel2ImgPath = "./images/ending_level2.png";
+    const endingLevel3SuccessImgPath = "./images/ending_level3_success.png";
 
     // ========= Utility =========
     function randBetween(min, max) {
@@ -362,6 +390,14 @@
         a.y < b.y + b.h &&
         a.y + a.h > b.y
       );
+    }
+
+    function clamp(value, min, max) {
+      return Math.max(min, Math.min(max, value));
+    }
+
+    function getCurrentLevel(elapsedMs) {
+      return clamp(Math.floor(elapsedMs / levelDurationMs) + 1, 1, 3);
     }
 
     // ========= Game Init & Reset =========
@@ -380,11 +416,13 @@
 
       clearInterval(collectibleSpawnId);
       clearInterval(obstacleSpawnId);
-      clearInterval(difficultyIncreaseId);
 
       deactivateFreshBoost();
       deactivateFlavorFrenzy();
       deactivateStinkMode();
+
+      gameStartTimestamp = null;
+      remainingTimeMs = gameTotalTimeMs;
 
       updateHUD();
     }
@@ -409,33 +447,52 @@
         spawnObstacle();
       }, 950); // every 950ms
 
-      // Increase difficulty over time
-      difficultyIncreaseId = setInterval(() => {
-        if (!gameRunning) return;
-        gameSpeed += 0.25;
-        if (freshnessScore >= level * 150) {
-          level++;
-        }
-        updateHUD();
-      }, 7000);
-
       requestAnimationFrame(gameLoop);
     }
 
-    function endGame() {
+    function endGame(reason, elapsedMs) {
+      if (gameOver) return;
       gameRunning = false;
       gameOver = true;
 
       clearInterval(collectibleSpawnId);
       clearInterval(obstacleSpawnId);
-      clearInterval(difficultyIncreaseId);
 
       deactivateFreshBoost();
       deactivateFlavorFrenzy();
       deactivateStinkMode();
 
+      const loveProgress = clamp(freshnessScore / loveFullScore, 0, 1);
+      const currentLevel = getCurrentLevel(elapsedMs || 0);
+
+      let titleText = "Run Over!";
+      let taglineText = "";
+      let endingSrc = endingLevel2ImgPath; // default mid fail
+
+      const succeeded = (loveProgress >= 0.99 && currentLevel === 3);
+
+      if (succeeded) {
+        titleText = "Mission: Freshness Complete!";
+        taglineText = "Fresh breath, full courage… Sona finally says YES!";
+        endingSrc = endingLevel3SuccessImgPath;
+      } else if (currentLevel === 1) {
+        titleText = "Too Soon!";
+        taglineText = "Oh no… Sonu lost too many chances too early!";
+        endingSrc = endingLevel1ImgPath;
+      } else {
+        titleText = "So Close...";
+        taglineText = "So close… but Sonu’s freshness ran out before the final level.";
+        endingSrc = endingLevel2ImgPath;
+      }
+
       finalScoreEl.textContent =
-        "Freshness Score: " + freshnessScore + " · Level reached: " + level;
+        "Freshness Score: " + freshnessScore +
+        " · Love Bar: " + Math.round(loveProgress * 100) + "%";
+
+      gameOverTitleEl.textContent = titleText;
+      taglineEl.textContent = taglineText;
+      endingImageEl.src = endingSrc;
+
       gameOverOverlay.style.display = "flex";
     }
 
@@ -443,7 +500,7 @@
     function spawnCollectible() {
       const brand = Math.random() < 0.6 ? "centerFresh" : "centerFruit";
       const glowing = Math.random() < 0.18; // 18% chance
-      const lanePadding = 40;
+      const lanePadding = 24;
       const x = randBetween(lanePadding, canvas.width - lanePadding - objectSize);
 
       collectibles.push({
@@ -457,7 +514,7 @@
 
     function spawnObstacle() {
       const kind = Math.random() < 0.5 ? "garlic" : "onion";
-      const lanePadding = 40;
+      const lanePadding = 24;
       const x = randBetween(lanePadding, canvas.width - lanePadding - objectSize);
 
       const imgIndex =
@@ -483,7 +540,7 @@
 
       freshBoostTimeoutId = setTimeout(() => {
         deactivateFreshBoost();
-      }, 7000); // 7 seconds
+      }, 7000);
     }
 
     function deactivateFreshBoost() {
@@ -504,7 +561,7 @@
 
       flavorFrenzyTimeoutId = setTimeout(() => {
         deactivateFlavorFrenzy();
-      }, 8000); // 8 seconds
+      }, 8000);
     }
 
     function deactivateFlavorFrenzy() {
@@ -517,7 +574,7 @@
       updateHUD();
     }
 
-    // ========= Stink Mode (garlic/onion hits) =========
+    // ========= Stink Mode =========
     function activateStinkMode() {
       if (!stinkModeActive) {
         stinkModeActive = true;
@@ -526,7 +583,6 @@
       if (stinkModeTimeoutId) {
         clearTimeout(stinkModeTimeoutId);
       }
-      // stink effect lasts 3 seconds
       stinkModeTimeoutId = setTimeout(() => {
         deactivateStinkMode();
       }, 3000);
@@ -543,32 +599,23 @@
 
     // ========= Drawing Helpers =========
     function drawBackground() {
-      // Draw supermarket aisle image as "cover"
-      if (supermarketImg.complete && supermarketImg.naturalWidth > 0) {
-        const iw = supermarketImg.width;
-        const ih = supermarketImg.height;
-        const scale = Math.max(canvas.width / iw, canvas.height / ih);
-        const dw = iw * scale;
-        const dh = ih * scale;
-        const dx = (canvas.width - dw) / 2;
-        const dy = (canvas.height - dh) / 2;
-        ctx.drawImage(supermarketImg, dx, dy, dw, dh);
+      if (backgroundReady) {
+        ctx.drawImage(backgroundImg, 0, 0, canvas.width, canvas.height);
+        // Darken slightly so UI & sprites pop
+        ctx.fillStyle = "rgba(10, 20, 40, 0.55)";
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
       } else {
-        // fallback plain background
-        ctx.fillStyle = "#020617";
+        // Fallback gradient
+        const g = ctx.createLinearGradient(0, 0, 0, canvas.height);
+        g.addColorStop(0, "#020617");
+        g.addColorStop(0.4, "#05192c");
+        g.addColorStop(1, "#020617");
+        ctx.fillStyle = g;
         ctx.fillRect(0, 0, canvas.width, canvas.height);
       }
 
-      // Dark overlay for contrast
-      const g = ctx.createLinearGradient(0, 0, 0, canvas.height);
-      g.addColorStop(0, "rgba(15,23,42,0.75)");
-      g.addColorStop(0.4, "rgba(15,23,42,0.35)");
-      g.addColorStop(1, "rgba(15,23,42,0.9)");
-      ctx.fillStyle = g;
-      ctx.fillRect(0, 0, canvas.width, canvas.height);
-
-      // Lane lines
-      ctx.strokeStyle = "rgba(148,163,184,0.35)";
+      // Lane lines (subtle)
+      ctx.strokeStyle = "rgba(148,163,184,0.2)";
       ctx.lineWidth = 1;
       const laneCount = 4;
       for (let i = 1; i < laneCount; i++) {
@@ -579,18 +626,7 @@
         ctx.stroke();
       }
 
-      // Subtle floating lights
-      for (let i = 0; i < 16; i++) {
-        const r = randBetween(3, 10);
-        const x = randBetween(0, canvas.width);
-        const y = randBetween(0, canvas.height);
-        ctx.fillStyle = "rgba(56,189,248,0.05)";
-        ctx.beginPath();
-        ctx.arc(x, y, r, 0, Math.PI * 2);
-        ctx.fill();
-      }
-
-      // Stink mode overlay
+      // Stink overlay
       if (stinkModeActive) {
         ctx.fillStyle = "rgba(234, 179, 8, 0.14)";
         ctx.fillRect(0, 0, canvas.width, canvas.height);
@@ -603,14 +639,10 @@
       ctx.rotate(-Math.PI / 8);
 
       const stripeWidth = 42;
-      const speed = 120; // px/sec
+      const speed = 120;
       const offset = (globalTime * speed) % stripeWidth;
 
-      for (
-        let x = -stripeWidth * 2;
-        x < canvas.width + canvas.height;
-        x += stripeWidth
-      ) {
+      for (let x = -stripeWidth * 2; x < canvas.width + canvas.height; x += stripeWidth) {
         ctx.fillStyle = "rgba(56,189,248,0.10)";
         ctx.fillRect(
           x + offset,
@@ -623,30 +655,109 @@
       ctx.restore();
     }
 
+    function drawLoveBar() {
+      const progress = clamp(freshnessScore / loveFullScore, 0, 1);
+
+      const barWidth = Math.min(420, canvas.width * 0.5);
+      const barHeight = 16;
+      const barX = (canvas.width - barWidth) / 2;
+      const barY = 70; // below HUD
+
+      // Boy & girl icons
+      const iconSize = 40;
+      const iconY = barY - 10;
+
+      if (loveBoyImg.complete) {
+        ctx.drawImage(loveBoyImg, barX - iconSize - 8, iconY - 10, iconSize, iconSize);
+      }
+      if (loveGirlImg.complete) {
+        ctx.drawImage(loveGirlImg, barX + barWidth + 8, iconY - 10, iconSize, iconSize);
+      }
+
+      // Bar background
+      ctx.fillStyle = "rgba(15, 23, 42, 0.85)";
+      ctx.beginPath();
+      ctx.roundRect(barX, barY, barWidth, barHeight, 999);
+      ctx.fill();
+
+      // Fill color transitions from red → orange → green
+      const r = Math.floor(220 - 120 * progress);
+      const g = Math.floor(60 + 180 * progress);
+      const b = 80;
+      ctx.fillStyle = `rgb(${r}, ${g}, ${b})`;
+      const filledWidth = barWidth * progress;
+      ctx.beginPath();
+      ctx.roundRect(barX, barY, filledWidth, barHeight, 999);
+      ctx.fill();
+
+      // Bar border
+      ctx.strokeStyle = "rgba(226, 232, 240, 0.9)";
+      ctx.lineWidth = 1.2;
+      ctx.beginPath();
+      ctx.roundRect(barX, barY, barWidth, barHeight, 999);
+      ctx.stroke();
+
+      // Little heart on the bar showing current position
+      const heartX = barX + filledWidth;
+      const heartY = barY + barHeight / 2;
+
+      ctx.save();
+      ctx.translate(heartX, heartY);
+      ctx.scale(0.75, 0.75);
+      ctx.fillStyle = "rgba(248, 113, 113, 0.95)";
+      ctx.beginPath();
+      ctx.moveTo(0, 0);
+      ctx.bezierCurveTo(-6, -8, -16, -8, -16, 0);
+      ctx.bezierCurveTo(-16, 8, -8, 12, 0, 18);
+      ctx.bezierCurveTo(8, 12, 16, 8, 16, 0);
+      ctx.bezierCurveTo(16, -8, 6, -8, 0, 0);
+      ctx.fill();
+      ctx.restore();
+    }
+
     function drawCollectible(c) {
       const baseSize = c.size;
-      const pulse =
-        c.glowing ? 1 + 0.12 * Math.sin(globalTime * 6 + c.x * 0.1) : 1;
+      const pulse = c.glowing ? 1 + 0.12 * Math.sin(globalTime * 6 + c.x * 0.1) : 1;
       const size = baseSize * pulse;
 
       const cx = c.x + baseSize / 2;
       const cy = c.y + baseSize / 2;
       const x = cx - size / 2;
-      const y = cy - (size * 0.6) / 2; // candies are more rectangular
+      const y = cy - size / 2;
 
       let img = c.brand === "centerFresh" ? centerFreshImg : centerFruitImg;
 
-      if (img && img.complete && img.naturalWidth > 0) {
-        // Maintain aspect ratio roughly as wide rectangle
-        ctx.save();
-        const bob = Math.sin(globalTime * 4 + c.x * 0.05) * 3;
-        ctx.translate(0, bob);
-        ctx.drawImage(img, x, y, size, size * 0.6);
-        ctx.restore();
+      if (img && img.complete) {
+        ctx.drawImage(img, x, y, size, size);
       } else {
-        // fallback simple shapes
-        ctx.fillStyle = c.brand === "centerFresh" ? "#22d3ee" : "#fb7185";
-        ctx.fillRect(x, y, size, size * 0.6);
+        // fallback shapes
+        if (c.brand === "centerFresh") {
+          const gradient = ctx.createLinearGradient(x, y, x + size, y + size);
+          gradient.addColorStop(0, "#0ea5e9");
+          gradient.addColorStop(0.5, "#22c1ff");
+          gradient.addColorStop(1, "#a5f3fc");
+          ctx.fillStyle = gradient;
+          ctx.beginPath();
+          ctx.roundRect(x, y, size, size * 0.7, 10);
+          ctx.fill();
+        } else {
+          const radius = size / 2;
+          const grad = ctx.createRadialGradient(
+            cx,
+            cy,
+            radius * 0.1,
+            cx,
+            cy,
+            radius
+          );
+          grad.addColorStop(0, "#f9a8d4");
+          grad.addColorStop(0.4, "#f97316");
+          grad.addColorStop(1, "#be185d");
+          ctx.fillStyle = grad;
+          ctx.beginPath();
+          ctx.arc(cx, cy, radius, 0, Math.PI * 2);
+          ctx.fill();
+        }
       }
 
       if (c.glowing) {
@@ -679,21 +790,15 @@
         img = onionImages[o.imgIndex % onionImages.length];
       }
 
-      if (img && img.complete && img.naturalWidth > 0) {
+      if (img && img.complete) {
         ctx.save();
         const bob = Math.sin(globalTime * 4 + o.x * 0.1) * 4;
         ctx.translate(0, bob);
         ctx.drawImage(img, x, y, size, size);
         ctx.restore();
-      } else {
-        // fallback simple circle
-        ctx.fillStyle = o.kind === "garlic" ? "#f9fafb" : "#fb7185";
-        ctx.beginPath();
-        ctx.arc(cx, cy, size * 0.45, 0, Math.PI * 2);
-        ctx.fill();
       }
 
-      // Pungent smell – yellow wavy lines above
+      // Pungent smell lines
       ctx.strokeStyle = "rgba(234, 179, 8, 0.8)";
       ctx.lineWidth = 1.4;
       for (let i = -1; i <= 1; i++) {
@@ -714,8 +819,7 @@
       const px = playerX;
       const py = playerY;
 
-      const glowRadius =
-        freshBoostActive || flavorFrenzyActive ? 24 : 0;
+      const glowRadius = (freshBoostActive || flavorFrenzyActive) ? 24 : 0;
 
       if (glowRadius > 0) {
         const gradient = ctx.createRadialGradient(
@@ -750,9 +854,10 @@
         ctx.fill();
       }
 
-      if (playerImg.src && playerImg.naturalWidth > 0) {
+      if (playerImg && playerImg.src && playerImg.complete) {
         ctx.drawImage(playerImg, px, py, playerWidth, playerHeight);
       } else {
+        // fallback capsule with CF logo
         const radius = 12;
         ctx.fillStyle = "#0ea5e9";
         ctx.beginPath();
@@ -806,15 +911,13 @@
         const dotCount = 6;
 
         for (let i = 0; i < dotCount; i++) {
-          const angle =
-            globalTime * 3 + (i * (Math.PI * 2)) / dotCount;
+          const angle = globalTime * 3 + (i * (Math.PI * 2)) / dotCount;
           const dx = centerX + orbitRadius * Math.cos(angle);
           const dy = centerY + orbitRadius * Math.sin(angle);
 
           ctx.beginPath();
           ctx.arc(dx, dy, 5, 0, Math.PI * 2);
-          ctx.fillStyle =
-            i % 2 === 0 ? "#f97316" : "#f9a8d4";
+          ctx.fillStyle = (i % 2 === 0) ? "#f97316" : "#f9a8d4";
           ctx.fill();
         }
       }
@@ -824,6 +927,8 @@
     function updateHUD() {
       scoreValueEl.textContent = freshnessScore.toString();
       levelValueEl.textContent = level.toString();
+      const secondsLeft = Math.max(0, Math.ceil(remainingTimeMs / 1000));
+      timerValueEl.textContent = secondsLeft.toString();
 
       freshBoostStatusEl.textContent = "Fresh Boost: " + (freshBoostActive ? "ON" : "OFF");
       flavorFrenzyStatusEl.textContent = "Flavor Frenzy: " + (flavorFrenzyActive ? "ON" : "OFF");
@@ -842,8 +947,24 @@
       if (!timestamp) timestamp = 0;
       globalTime = timestamp / 1000;
 
+      if (!gameStartTimestamp) {
+        gameStartTimestamp = timestamp;
+      }
+
+      const elapsedMs = timestamp - gameStartTimestamp;
+      remainingTimeMs = Math.max(0, gameTotalTimeMs - elapsedMs);
+
+      level = getCurrentLevel(elapsedMs);
+      gameSpeed = baseGameSpeed + (level - 1) * 1.0; // each level slightly faster
+
+      if (remainingTimeMs <= 0) {
+        endGame("time", elapsedMs);
+        return;
+      }
+
       ctx.clearRect(0, 0, canvas.width, canvas.height);
       drawBackground();
+      drawLoveBar();
 
       if (freshBoostActive) {
         drawFreshBreezeOverlay();
@@ -892,7 +1013,6 @@
           }
 
           collectibles.splice(i, 1);
-          updateHUD();
           continue;
         }
 
@@ -935,17 +1055,17 @@
 
         if (rectsOverlap(playerRect, oRect)) {
           if (freshBoostActive) {
-            // Protected: destroy garlic/onion
             obstacles.splice(i, 1);
           } else {
-            // Garlic/Onion hit
+            // Garlic/Onion hit = lose rose + lose freshness + stink mode
             lives--;
+            freshnessScore = Math.max(0, freshnessScore - 20);
             activateStinkMode();
             obstacles.splice(i, 1);
-            updateHUD();
 
             if (lives <= 0) {
-              endGame();
+              updateHUD();
+              endGame("lives", elapsedMs);
               return;
             }
           }
@@ -955,6 +1075,7 @@
       }
 
       drawPlayer();
+      updateHUD();
       requestAnimationFrame(gameLoop);
     }
 
@@ -1023,15 +1144,17 @@
     howToButton.addEventListener("click", () => {
       alert(
         "How to Play:\n\n" +
+          "• Total time: 60 seconds, split into 3 levels (easy → harder → hardest).\n" +
           "• Move left/right using ← → or A / D keys.\n" +
           "• On mobile, tap left/right side of the screen.\n" +
-          "• Collect Center Fresh & Center Fruit packs to increase your Freshness Score.\n" +
+          "• Collect Center Fresh (blue/green) and Center Fruit (pink/orange) packs.\n" +
           "• Glowing packs trigger power-ups:\n" +
-          "   – Fresh Boost: speed + protection from obstacles (with breeze effect)\n" +
-          "   – Flavor Frenzy: magnet that pulls collectibles toward you (with orbiting fruits)\n" +
-          "• Garlic & onion obstacles have pungent smell:\n" +
-          "   – First hits cost you roses (lives) and put you in stink mode (slow + they chase you).\n" +
-          "   – When all 3 roses are gone, the run ends.\n"
+          "   – Fresh Boost: speed + protection from garlic & onion.\n" +
+          "   – Flavor Frenzy: magnet that pulls freshness towards you.\n" +
+          "• Garlic & onion clouds:\n" +
+          "   – Every hit: you lose a rose, lose some freshness, and enter stink mode (they get pulled towards you).\n" +
+          "   – Lose all 3 roses and the run ends.\n" +
+          "• The love bar at the top fills towards Sona as you score. Fill it by Level 3 to make her say YES!"
       );
     });
 
