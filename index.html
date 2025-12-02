@@ -64,19 +64,27 @@
       display: block;
     }
 
+    /* --- OVERLAYS --- */
     #startOverlay,
-    #gameOverOverlay {
+    #gameOverOverlay,
+    #storyboardOverlay {
       position: absolute;
       inset: 0;
       display: flex;
       flex-direction: column;
       align-items: center;
       justify-content: center;
-      background: rgba(0,0,0,0.86);
+      background: rgba(0,0,0,0.92); /* Slightly darker for story */
       z-index: 20;
       text-align: center;
       padding: 20px;
       color: #f9fafb;
+    }
+
+    /* Storyboard needs to be on top of game start screen initially */
+    #storyboardOverlay {
+      z-index: 30; 
+      background: #000; /* Solid black for story */
     }
 
     h1 {
@@ -108,11 +116,12 @@
 
     .brand-line strong { color: #a8fff1; }
 
+    /* Button Styles */
     .btn {
       border: none;
       border-radius: 999px;
       padding: 9px 20px;
-      margin: 6px 0;
+      margin: 6px 5px;
       font-size: 14px;
       font-weight: 600;
       cursor: pointer;
@@ -140,6 +149,58 @@
 
     .btn-ghost:hover {
       background: rgba(15, 23, 42, 0.8);
+    }
+
+    /* Storyboard Specific CSS */
+    .story-image-container {
+      width: 100%;
+      max-width: 800px;
+      height: 60vh;
+      margin-bottom: 20px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .story-image {
+      max-width: 100%;
+      max-height: 100%;
+      object-fit: contain;
+      border-radius: 8px;
+      box-shadow: 0 0 20px rgba(0,230,192, 0.1);
+    }
+
+    .story-text {
+      background: #fff;
+      color: #000;
+      padding: 15px 20px;
+      border-radius: 12px;
+      font-family: sans-serif;
+      font-weight: bold;
+      font-size: 1.1em;
+      margin-bottom: 20px;
+      max-width: 90%;
+      position: relative;
+    }
+    
+    .story-text::after {
+      /* Speech bubble tail */
+      content: '';
+      position: absolute;
+      top: -10px;
+      left: 50%;
+      transform: translateX(-50%);
+      border-width: 0 10px 10px;
+      border-style: solid;
+      border-color: #fff transparent;
+      display: block;
+      width: 0;
+    }
+
+    .story-controls {
+      display: flex;
+      justify-content: center;
+      width: 100%;
     }
 
     .hint {
@@ -171,6 +232,20 @@
   </style>
 </head>
 <body>
+
+  <div id="storyboardOverlay">
+    <div class="story-image-container">
+      <img id="storyImage" class="story-image" src="" alt="Story Panel">
+    </div>
+    <div id="storyText" class="story-text">
+      </div>
+    <div class="story-controls">
+      <button class="btn btn-ghost" id="storyPrevBtn">Previous</button>
+      <button class="btn btn-primary" id="storyNextBtn">Next</button>
+      <button class="btn btn-ghost" id="storySkipBtn" style="margin-left:20px; font-size: 10px; padding: 5px 10px;">Skip Story</button>
+    </div>
+  </div>
+
   <div id="gameContainer">
     <canvas id="gameCanvas"></canvas>
 
@@ -229,6 +304,78 @@
   </div>
 
   <script>
+    // ======== Storyboard Logic ========
+    // IMPORTANT: Make sure your images are in the same folder as this HTML file
+    const storySlides = [
+      {
+        src: "Gemini_Generated_Image_grwbvxgrwbvxgrwb.jpg",
+        text: "Sonu has the biggest crush on Sona..."
+      },
+      {
+        src: "Gemini_Generated_Image_j8kz37j8kz37j8kz.jpg",
+        text: "Today is Valentine’s Day... and he’s finally going to propose!"
+      },
+      {
+        src: "Gemini_Generated_Image_na87r1na87r1na87.jpg",
+        text: "Sona... I wanted to tell you something..."
+      },
+      {
+        src: "Gemini_Generated_Image_vijhm5vijhm5vijh.jpg",
+        text: "Aaaah! Sonu... your breath!! He needs to fix this FAST!"
+      }
+    ];
+
+    let currentSlideIndex = 0;
+    const storyboardOverlay = document.getElementById("storyboardOverlay");
+    const storyImage = document.getElementById("storyImage");
+    const storyText = document.getElementById("storyText");
+    const storyPrevBtn = document.getElementById("storyPrevBtn");
+    const storyNextBtn = document.getElementById("storyNextBtn");
+    const storySkipBtn = document.getElementById("storySkipBtn");
+
+    function updateStorySlide() {
+      const slide = storySlides[currentSlideIndex];
+      storyImage.src = slide.src;
+      storyText.textContent = slide.text;
+
+      // Button states
+      storyPrevBtn.style.visibility = currentSlideIndex === 0 ? "hidden" : "visible";
+      
+      if (currentSlideIndex === storySlides.length - 1) {
+        storyNextBtn.textContent = "Start Game";
+        storyNextBtn.classList.add("btn-primary");
+      } else {
+        storyNextBtn.textContent = "Next";
+      }
+    }
+
+    function endStory() {
+      // Fade out story, show game start screen
+      storyboardOverlay.style.display = "none";
+    }
+
+    storyNextBtn.addEventListener("click", () => {
+      if (currentSlideIndex < storySlides.length - 1) {
+        currentSlideIndex++;
+        updateStorySlide();
+      } else {
+        endStory();
+      }
+    });
+
+    storyPrevBtn.addEventListener("click", () => {
+      if (currentSlideIndex > 0) {
+        currentSlideIndex--;
+        updateStorySlide();
+      }
+    });
+
+    storySkipBtn.addEventListener("click", endStory);
+
+    // Initialize Story
+    updateStorySlide();
+
+
     // ======== Canvas Setup (NO DPR scaling for smoothness) ========
     const canvas = document.getElementById("gameCanvas");
     const ctx = canvas.getContext("2d");
@@ -298,6 +445,7 @@
     const resultImageEl = document.getElementById("resultImage");
 
     // ======== Assets ========
+    // IMPORTANT: Ensure these files exist in your folder
     function loadImage(src) {
       const img = new Image();
       img.src = src;
@@ -751,6 +899,10 @@
 
     backToStartButton.addEventListener("click", () => {
       gameOverOverlay.style.display = "none";
+      // To show storyboard again, uncomment the line below:
+      // storyboardOverlay.style.display = "flex"; currentSlideIndex = 0; updateStorySlide();
+      
+      // Currently, it goes back to the Game Menu, skipping the story on replay
       startOverlay.style.display = "flex";
     });
 
