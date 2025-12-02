@@ -64,27 +64,73 @@
       display: block;
     }
 
-    /* --- OVERLAYS --- */
+    #storyOverlay,
     #startOverlay,
-    #gameOverOverlay,
-    #storyboardOverlay {
+    #gameOverOverlay {
       position: absolute;
       inset: 0;
       display: flex;
       flex-direction: column;
       align-items: center;
       justify-content: center;
-      background: rgba(0,0,0,0.92); /* Slightly darker for story */
+      background: rgba(0,0,0,0.95);
       z-index: 20;
       text-align: center;
       padding: 20px;
       color: #f9fafb;
     }
 
-    /* Storyboard needs to be on top of game start screen initially */
-    #storyboardOverlay {
-      z-index: 30; 
-      background: #000; /* Solid black for story */
+    #storyOverlay {
+      z-index: 30;
+    }
+
+    #storyImage {
+      width: 100%;
+      height: 100%;
+      object-fit: contain;
+    }
+
+    #storyControls {
+      position: absolute;
+      bottom: 18px;
+      left: 50%;
+      transform: translateX(-50%);
+      display: flex;
+      gap: 10px;
+      align-items: center;
+    }
+
+    .story-nav {
+      background: rgba(0,0,0,0.7);
+      color: #f9fafb;
+      border: 1px solid rgba(148, 163, 184, 0.7);
+      border-radius: 50%;
+      width: 50px;
+      height: 50px;
+      font-size: 24px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: all 0.2s ease;
+    }
+
+    .story-nav:hover:not(:disabled) {
+      background: rgba(15, 23, 42, 0.9);
+      transform: scale(1.1);
+    }
+
+    .story-nav:disabled {
+      opacity: 0.3;
+      cursor: not-allowed;
+    }
+
+    #storyProgress {
+      padding: 6px 14px;
+      background: rgba(0,0,0,0.7);
+      border-radius: 999px;
+      font-size: 13px;
+      margin: 0 10px;
     }
 
     h1 {
@@ -116,12 +162,11 @@
 
     .brand-line strong { color: #a8fff1; }
 
-    /* Button Styles */
     .btn {
       border: none;
       border-radius: 999px;
       padding: 9px 20px;
-      margin: 6px 5px;
+      margin: 6px 0;
       font-size: 14px;
       font-weight: 600;
       cursor: pointer;
@@ -149,58 +194,6 @@
 
     .btn-ghost:hover {
       background: rgba(15, 23, 42, 0.8);
-    }
-
-    /* Storyboard Specific CSS */
-    .story-image-container {
-      width: 100%;
-      max-width: 800px;
-      height: 60vh;
-      margin-bottom: 20px;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-    }
-
-    .story-image {
-      max-width: 100%;
-      max-height: 100%;
-      object-fit: contain;
-      border-radius: 8px;
-      box-shadow: 0 0 20px rgba(0,230,192, 0.1);
-    }
-
-    .story-text {
-      background: #fff;
-      color: #000;
-      padding: 15px 20px;
-      border-radius: 12px;
-      font-family: sans-serif;
-      font-weight: bold;
-      font-size: 1.1em;
-      margin-bottom: 20px;
-      max-width: 90%;
-      position: relative;
-    }
-    
-    .story-text::after {
-      /* Speech bubble tail */
-      content: '';
-      position: absolute;
-      top: -10px;
-      left: 50%;
-      transform: translateX(-50%);
-      border-width: 0 10px 10px;
-      border-style: solid;
-      border-color: #fff transparent;
-      display: block;
-      width: 0;
-    }
-
-    .story-controls {
-      display: flex;
-      justify-content: center;
-      width: 100%;
     }
 
     .hint {
@@ -232,20 +225,6 @@
   </style>
 </head>
 <body>
-
-  <div id="storyboardOverlay">
-    <div class="story-image-container">
-      <img id="storyImage" class="story-image" src="" alt="Story Panel">
-    </div>
-    <div id="storyText" class="story-text">
-      </div>
-    <div class="story-controls">
-      <button class="btn btn-ghost" id="storyPrevBtn">Previous</button>
-      <button class="btn btn-primary" id="storyNextBtn">Next</button>
-      <button class="btn btn-ghost" id="storySkipBtn" style="margin-left:20px; font-size: 10px; padding: 5px 10px;">Skip Story</button>
-    </div>
-  </div>
-
   <div id="gameContainer">
     <canvas id="gameCanvas"></canvas>
 
@@ -269,7 +248,17 @@
       <span>Roses:&nbsp;<span id="livesValue"></span></span>
     </div>
 
-    <div id="startOverlay">
+    <!-- Story Overlay -->
+    <div id="storyOverlay">
+      <img id="storyImage" src="" alt="Story panel" />
+      <div id="storyControls">
+        <button class="story-nav" id="prevStoryBtn">←</button>
+        <span id="storyProgress">1 / 4</span>
+        <button class="story-nav" id="nextStoryBtn">→</button>
+      </div>
+    </div>
+
+    <div id="startOverlay" style="display:none;">
       <h1>
         CENTER FRESH
         <span>FRESH DASH</span>
@@ -304,78 +293,6 @@
   </div>
 
   <script>
-    // ======== Storyboard Logic ========
-    // IMPORTANT: Make sure your images are in the same folder as this HTML file
-    const storySlides = [
-      {
-        src: "Gemini_Generated_Image_grwbvxgrwbvxgrwb.jpg",
-        text: "Sonu has the biggest crush on Sona..."
-      },
-      {
-        src: "Gemini_Generated_Image_j8kz37j8kz37j8kz.jpg",
-        text: "Today is Valentine’s Day... and he’s finally going to propose!"
-      },
-      {
-        src: "Gemini_Generated_Image_na87r1na87r1na87.jpg",
-        text: "Sona... I wanted to tell you something..."
-      },
-      {
-        src: "Gemini_Generated_Image_vijhm5vijhm5vijh.jpg",
-        text: "Aaaah! Sonu... your breath!! He needs to fix this FAST!"
-      }
-    ];
-
-    let currentSlideIndex = 0;
-    const storyboardOverlay = document.getElementById("storyboardOverlay");
-    const storyImage = document.getElementById("storyImage");
-    const storyText = document.getElementById("storyText");
-    const storyPrevBtn = document.getElementById("storyPrevBtn");
-    const storyNextBtn = document.getElementById("storyNextBtn");
-    const storySkipBtn = document.getElementById("storySkipBtn");
-
-    function updateStorySlide() {
-      const slide = storySlides[currentSlideIndex];
-      storyImage.src = slide.src;
-      storyText.textContent = slide.text;
-
-      // Button states
-      storyPrevBtn.style.visibility = currentSlideIndex === 0 ? "hidden" : "visible";
-      
-      if (currentSlideIndex === storySlides.length - 1) {
-        storyNextBtn.textContent = "Start Game";
-        storyNextBtn.classList.add("btn-primary");
-      } else {
-        storyNextBtn.textContent = "Next";
-      }
-    }
-
-    function endStory() {
-      // Fade out story, show game start screen
-      storyboardOverlay.style.display = "none";
-    }
-
-    storyNextBtn.addEventListener("click", () => {
-      if (currentSlideIndex < storySlides.length - 1) {
-        currentSlideIndex++;
-        updateStorySlide();
-      } else {
-        endStory();
-      }
-    });
-
-    storyPrevBtn.addEventListener("click", () => {
-      if (currentSlideIndex > 0) {
-        currentSlideIndex--;
-        updateStorySlide();
-      }
-    });
-
-    storySkipBtn.addEventListener("click", endStory);
-
-    // Initialize Story
-    updateStorySlide();
-
-
     // ======== Canvas Setup (NO DPR scaling for smoothness) ========
     const canvas = document.getElementById("gameCanvas");
     const ctx = canvas.getContext("2d");
@@ -438,14 +355,63 @@
 
     const startOverlay = document.getElementById("startOverlay");
     const gameOverOverlay = document.getElementById("gameOverOverlay");
+    const storyOverlay = document.getElementById("storyOverlay");
+    const storyImage = document.getElementById("storyImage");
+    const storyProgress = document.getElementById("storyProgress");
+    const prevStoryBtn = document.getElementById("prevStoryBtn");
+    const nextStoryBtn = document.getElementById("nextStoryBtn");
     const startButton = document.getElementById("startButton");
     const howToButton = document.getElementById("howToButton");
     const restartButton = document.getElementById("restartButton");
     const backToStartButton = document.getElementById("backToStartButton");
     const resultImageEl = document.getElementById("resultImage");
 
+    // ======== Story Slides ========
+    const storySlides = [
+      "./images/story_slide1.jpg",
+      "./images/story_slide2.jpg",
+      "./images/story_slide3.jpg",
+      "./images/story_slide4.jpg"
+    ];
+    let currentSlide = 0;
+
+    function showStorySlide(index) {
+      currentSlide = index;
+      storyImage.src = storySlides[index];
+      storyProgress.textContent = `${index + 1} / ${storySlides.length}`;
+      
+      prevStoryBtn.disabled = index === 0;
+      
+      if (index === storySlides.length - 1) {
+        nextStoryBtn.textContent = "START";
+        nextStoryBtn.style.width = "auto";
+        nextStoryBtn.style.borderRadius = "999px";
+        nextStoryBtn.style.padding = "0 20px";
+      } else {
+        nextStoryBtn.textContent = "→";
+        nextStoryBtn.style.width = "50px";
+        nextStoryBtn.style.borderRadius = "50%";
+        nextStoryBtn.style.padding = "0";
+      }
+    }
+
+    prevStoryBtn.addEventListener("click", () => {
+      if (currentSlide > 0) {
+        showStorySlide(currentSlide - 1);
+      }
+    });
+
+    nextStoryBtn.addEventListener("click", () => {
+      if (currentSlide < storySlides.length - 1) {
+        showStorySlide(currentSlide + 1);
+      } else {
+        // Last slide - start game
+        storyOverlay.style.display = "none";
+        startOverlay.style.display = "flex";
+      }
+    });
+
     // ======== Assets ========
-    // IMPORTANT: Ensure these files exist in your folder
     function loadImage(src) {
       const img = new Image();
       img.src = src;
@@ -899,11 +865,9 @@
 
     backToStartButton.addEventListener("click", () => {
       gameOverOverlay.style.display = "none";
-      // To show storyboard again, uncomment the line below:
-      // storyboardOverlay.style.display = "flex"; currentSlideIndex = 0; updateStorySlide();
-      
-      // Currently, it goes back to the Game Menu, skipping the story on replay
-      startOverlay.style.display = "flex";
+      currentSlide = 0;
+      showStorySlide(0);
+      storyOverlay.style.display = "flex";
     });
 
     // ======== Init ========
@@ -911,6 +875,7 @@
     resizeCanvases();
     initGameState();
     updatePlayerPosition();
+    showStorySlide(0); // Start with first story slide
   </script>
 </body>
 </html>
