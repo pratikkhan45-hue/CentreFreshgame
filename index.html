@@ -397,17 +397,27 @@
     let currentSlide = 0;
 
     // ======== Game Music ========
-    const bgMusic = new Audio("./audio/game_music.mp3");
+    const bgMusic = new Audio("./audio/2-17. Fortree City.mp3");
     bgMusic.loop = true;
-    bgMusic.volume = 0.5; // 50% volume
+    bgMusic.volume = 0.6; // 60% volume (increased from 50%)
 
     function playMusic() {
-      bgMusic.play().catch(err => {
-        console.log("Music autoplay blocked:", err);
-      });
+      console.log("Attempting to play music...");
+      bgMusic.play()
+        .then(() => {
+          console.log("✅ Music playing successfully!");
+        })
+        .catch(err => {
+          console.error("❌ Music autoplay blocked or error:", err);
+          // Try again on next user interaction
+          document.addEventListener('click', () => {
+            bgMusic.play().catch(e => console.log("Still blocked:", e));
+          }, { once: true });
+        });
     }
 
     function stopMusic() {
+      console.log("Stopping music...");
       bgMusic.pause();
       bgMusic.currentTime = 0;
     }
@@ -439,13 +449,18 @@
     });
 
     nextStoryBtn.addEventListener("click", () => {
+      // Try to play music on first interaction
+      if (currentSlide === 0) {
+        playMusic();
+      }
+      
       if (currentSlide < storySlides.length - 1) {
         showStorySlide(currentSlide + 1);
       } else {
         // Last slide - start game
         storyOverlay.style.display = "none";
         startOverlay.style.display = "flex";
-        playMusic(); // Start music when entering game menu
+        playMusic(); // Ensure music is playing
       }
     });
 
