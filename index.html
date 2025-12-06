@@ -73,7 +73,6 @@
       flex-direction: column;
       align-items: center;
       justify-content: center;
-      background: rgba(0,0,0,0.95);
       z-index: 20;
       text-align: center;
       padding: 20px;
@@ -82,6 +81,27 @@
 
     #storyOverlay {
       z-index: 30;
+      background: rgba(0,0,0,0.95);
+    }
+
+    #startOverlay {
+      background: none;
+      backdrop-filter: blur(8px);
+    }
+
+    #startOverlay::before {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background-image: url('./images/supermarket.jpg');
+      background-size: cover;
+      background-position: center;
+      filter: brightness(0.3) blur(2px);
+      z-index: -1;
+    }
+
+    #gameOverOverlay {
+      background: rgba(0,0,0,0.95);
     }
 
     #storyImage {
@@ -368,12 +388,29 @@
 
     // ======== Story Slides ========
     const storySlides = [
+      "./images/story_slide0.jpg",  // NEW: Title/intro slide
       "./images/story_slide1.jpg",
       "./images/story_slide2.jpg",
       "./images/story_slide3.jpg",
       "./images/story_slide4.jpg"
     ];
     let currentSlide = 0;
+
+    // ======== Game Music ========
+    const bgMusic = new Audio("./audio/game_music.mp3");
+    bgMusic.loop = true;
+    bgMusic.volume = 0.5; // 50% volume
+
+    function playMusic() {
+      bgMusic.play().catch(err => {
+        console.log("Music autoplay blocked:", err);
+      });
+    }
+
+    function stopMusic() {
+      bgMusic.pause();
+      bgMusic.currentTime = 0;
+    }
 
     function showStorySlide(index) {
       currentSlide = index;
@@ -408,6 +445,7 @@
         // Last slide - start game
         storyOverlay.style.display = "none";
         startOverlay.style.display = "flex";
+        playMusic(); // Start music when entering game menu
       }
     });
 
@@ -534,6 +572,7 @@
       gameOver = true;
       clearInterval(collectibleSpawnId);
       clearInterval(obstacleSpawnId);
+      stopMusic(); // Stop music when game ends
 
       if (outcome === "success") {
         resultImageEl.src = resultSuccessImg.src;
@@ -865,6 +904,7 @@
 
     backToStartButton.addEventListener("click", () => {
       gameOverOverlay.style.display = "none";
+      stopMusic(); // Stop music when going back
       currentSlide = 0;
       showStorySlide(0);
       storyOverlay.style.display = "flex";
