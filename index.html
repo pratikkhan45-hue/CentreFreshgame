@@ -241,6 +241,63 @@
       transform: translateX(-50%);
       display: flex;
       gap: 10px;
+      z-index: 5;
+    }
+
+    /* Center Fresh CTA Overlay */
+    #ctaOverlay {
+      position: absolute;
+      inset: 0;
+      background: rgba(0, 0, 0, 0.92);
+      display: none;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      z-index: 10;
+      padding: 40px 20px;
+      text-align: center;
+    }
+
+    #ctaOverlay h2 {
+      font-size: clamp(24px, 5vw, 36px);
+      margin: 0 0 16px;
+      color: #00e6c0;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+
+    #ctaOverlay p {
+      font-size: clamp(16px, 3vw, 20px);
+      margin: 0 0 24px;
+      max-width: 600px;
+      line-height: 1.6;
+      color: #e5e7eb;
+    }
+
+    .cta-buttons {
+      display: flex;
+      gap: 14px;
+      flex-wrap: wrap;
+      justify-content: center;
+    }
+
+    .btn-shop {
+      background: linear-gradient(135deg, #00e6c0, #00ffd5);
+      color: #031019;
+      font-size: 16px;
+      padding: 14px 32px;
+      box-shadow: 0 12px 30px rgba(0, 230, 192, 0.5);
+      animation: pulse 2s infinite;
+    }
+
+    .btn-shop:hover {
+      transform: translateY(-3px);
+      box-shadow: 0 16px 40px rgba(0, 230, 192, 0.7);
+    }
+
+    @keyframes pulse {
+      0%, 100% { transform: scale(1); }
+      50% { transform: scale(1.05); }
     }
   </style>
 </head>
@@ -305,6 +362,19 @@
 
     <div id="gameOverOverlay" style="display:none;">
       <img id="resultImage" src="" alt="Result panel" />
+      
+      <!-- CTA Overlay for Shopping -->
+      <div id="ctaOverlay">
+        <h2 id="ctaTitle">Keep Your Breath Fresh!</h2>
+        <p id="ctaMessage">
+          Don't let bad breath ruin your special moments! Get Center Fresh now and stay confident all day long.
+        </p>
+        <div class="cta-buttons">
+          <button class="btn btn-shop" id="shopNowBtn">🛒 Shop Center Fresh Now</button>
+          <button class="btn btn-ghost" id="closeCtaBtn">Maybe Later</button>
+        </div>
+      </div>
+
       <div id="gameOverControls">
         <button class="btn btn-primary" id="restartButton">Play Again</button>
         <button class="btn btn-ghost" id="backToStartButton">Back to Start</button>
@@ -385,6 +455,12 @@
     const restartButton = document.getElementById("restartButton");
     const backToStartButton = document.getElementById("backToStartButton");
     const resultImageEl = document.getElementById("resultImage");
+    
+    const ctaOverlay = document.getElementById("ctaOverlay");
+    const ctaTitle = document.getElementById("ctaTitle");
+    const ctaMessage = document.getElementById("ctaMessage");
+    const shopNowBtn = document.getElementById("shopNowBtn");
+    const closeCtaBtn = document.getElementById("closeCtaBtn");
 
     // ======== Story Slides ========
     const storySlides = [
@@ -592,13 +668,44 @@
 
       if (outcome === "success") {
         resultImageEl.src = resultSuccessImg.src;
+        // Success after level 3
+        setTimeout(() => {
+          showCTA(
+            "Congratulations! 🎉",
+            "You won Sona's heart with fresh breath! Keep your confidence high every day with Center Fresh – the freshness that never lets you down!"
+          );
+        }, 1500);
       } else if (outcome === "fail_lvl1") {
         resultImageEl.src = resultFailLvl1Img.src;
+        // Failed in level 1
+        setTimeout(() => {
+          showCTA(
+            "Oops! Fresh Up! 💚",
+            "Looks like you need more freshness power! Don't worry – grab Center Fresh and get ready to impress. Fresh breath = Instant confidence!"
+          );
+        }, 1500);
       } else {
         resultImageEl.src = resultFailLvl2Img.src;
+        // Failed in level 2 or time up
+        setTimeout(() => {
+          showCTA(
+            "So Close! Keep It Fresh! 🌟",
+            "You almost made it! A little more freshness could change everything. Get Center Fresh and be ready for your next big moment!"
+          );
+        }, 1500);
       }
 
       gameOverOverlay.style.display = "flex";
+    }
+
+    function showCTA(title, message) {
+      ctaTitle.textContent = title;
+      ctaMessage.textContent = message;
+      ctaOverlay.style.display = "flex";
+    }
+
+    function hideCTA() {
+      ctaOverlay.style.display = "none";
     }
 
     // ======== Spawning ========
@@ -920,10 +1027,19 @@
 
     backToStartButton.addEventListener("click", () => {
       gameOverOverlay.style.display = "none";
+      hideCTA();
       stopMusic(); // Stop music when going back
       currentSlide = 0;
       showStorySlide(0);
       storyOverlay.style.display = "flex";
+    });
+
+    shopNowBtn.addEventListener("click", () => {
+      window.open("https://www.bigbasket.com/pb/center-fresh/", "_blank");
+    });
+
+    closeCtaBtn.addEventListener("click", () => {
+      hideCTA();
     });
 
     // ======== Init ========
